@@ -1,0 +1,5 @@
+.vscode/
+release/.vscode/settings.json
+release/.vscode/launch.json
+node_modules/
+reports/

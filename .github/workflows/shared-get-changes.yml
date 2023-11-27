@@ -1,0 +1,36 @@
+name: shared-get-changes
+
+on:
+  workflow_call: 
+    outputs:
+      js-modified: 
+        value: ${{ jobs.get-changes.outputs.js-modified }}
+      action-modified: 
+        value: ${{ jobs.get-changes.outputs.action-modified }}
+
+
+jobs:
+  get-changes:
+    name: 🔎 Get Changes
+    runs-on: ubuntu-latest
+    outputs:
+      js-modified: ${{ steps.changes.outputs.js || steps.changes.outputs.tests }}
+      action-modified: ${{ steps.changes.outputs.action }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+      - name: Paths Changes Filter
+        uses: dorny/paths-filter@v2.11.1
+        id: changes
+        with:
+          filters: |
+            js:
+              - index.js
+              - functions/**
+              - package.json|package-lock.json
+            tests:
+              - tests/index/**
+              - tests/functions/**
+            action:
+              - action.yml
+              - tests/e2e/**

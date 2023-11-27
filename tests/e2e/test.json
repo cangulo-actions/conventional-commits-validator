@@ -1,0 +1,1 @@
+{"statusCheckRollup":[{"__typename":"CheckRun","completedAt":"2023-12-02T00:52:10Z","conclusion":"FAILURE","detailsUrl":"https://github.com/cangulo-actions/CrazyActionsTests/actions/runs/7066889252/job/19239510715","name":"valide commits","startedAt":"2023-12-02T00:52:09Z","status":"COMPLETED","workflowName":"CI"}]}

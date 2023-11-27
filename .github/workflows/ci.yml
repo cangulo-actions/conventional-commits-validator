@@ -1,0 +1,102 @@
+name: 🛞 continuous-integration
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  get-changes:
+    name: 🔎 Get Changes
+    uses: ./.github/workflows/shared-get-changes.yml
+
+  lint-code:
+    name: 🕺 Lint Code
+    needs: get-changes
+    if: needs.get-changes.outputs.js-modified == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+
+      - name: install packages
+        run: npm install --only=dev
+
+      - name: validate code style (eslint)
+        run: npm run lint
+
+      - name: explain how to fix code style
+        if: failure()
+        env:
+          ESLINT_TUTORIAL: https://mojitocoder.medium.com/how-to-add-code-linting-for-a-node-js-project-b210d8759cd5
+        run: |
+          echo "# CI failed validating code style"    >> $GITHUB_STEP_SUMMARY
+          echo "To fix the code style, run:"          >> $GITHUB_STEP_SUMMARY
+          echo "npm run lint-fix"                     >> $GITHUB_STEP_SUMMARY
+          echo "[ESLINT Tutorail]($ESLINT_TUTORIAL)"  >> $GITHUB_STEP_SUMMARY
+
+  test-JS:
+    name: 🧪 JS Tests
+    needs: get-changes
+    if: needs.get-changes.outputs.js-modified == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+
+      - name: install packages
+        run: npm install
+
+      - name: run JS tests (UT and index.js)
+        run: npm run test
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: JS Tests  # Name of the check run which will be created
+          path: reports/jest-*.xml
+          reporter: jest-junit
+
+  test-e2e:
+    name: 🧪 E2E Tests in CrazyActionsTests repo
+    needs: get-changes
+    if: needs.get-changes.outputs.action-modified == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: e2e-tests
+      cancel-in-progress: false
+    steps:
+      - name: Checkout cangulo-actions/CrazyActionsTests for e2e tests
+        uses: actions/checkout@v4.1.1
+        with:
+          repository: cangulo-actions/CrazyActionsTests
+          ref: main
+          fetch-tags: true
+          fetch-depth: 10 # fetch last 10 commits
+          token: ${{ secrets.GH_AUTOMATION_TOKEN }}
+
+      - name: Checkout semver repository
+        uses: actions/checkout@v4.1.1
+        with:
+          path: semver-repo
+
+      - name: install packages
+        working-directory: semver-repo
+        run: npm install
+
+      - name: run e2e tests (create and merge PR in CrazyActionsTests repo)
+        working-directory: semver-repo
+        env:
+          REPO_PATH: '../'
+          CC_BRANCH: ${{ github.head_ref }}
+          TEST_DATA_PATH: ./tests/e2e/e2e.test.data.json
+          GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
+        run: npm run test-e2e
+          
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: E2E Tests in CrazyActionsTests repo   # Name of the check run which will be created
+          path: semver-repo/reports/jest-*.xml
+          reporter: jest-junit
