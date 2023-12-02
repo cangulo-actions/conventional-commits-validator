@@ -5,6 +5,17 @@ on:
     branches: [main]
 
 jobs:
+  validate-commits:
+    name: validate commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Conventional Commits
+        uses: cangulo-actions/conventional-commits-validator@main
+        id: validate-commits
+
   get-changes:
     name: 🔎 Get Changes
     uses: ./.github/workflows/shared-get-changes.yml
