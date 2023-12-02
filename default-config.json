@@ -1,0 +1,31 @@
+{
+    "changeTypes": {
+        "break": {
+            "release": "major"
+        },
+        "major": {
+            "release": "major"
+        },
+        "feat": {
+            "release": "minor"
+        },
+        "fix": {
+            "release": "patch"
+        },
+        "refactor": {
+            "release": "none"
+        },
+        "chore": {
+            "release": "none"
+        },
+        "test": {
+            "release": "none"
+        },
+        "docs": {
+            "release": "none"
+        },
+        "ci" : {
+            "release": "none"
+        }
+    }
+}

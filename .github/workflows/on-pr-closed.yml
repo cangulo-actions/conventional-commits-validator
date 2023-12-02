@@ -1,0 +1,47 @@
+name: 🧹 On PR closed
+# Undo changes in the CrazyActionsTests repo 
+
+on:
+  pull_request:
+    branches: [main]
+    types: [ closed ]
+
+jobs:
+  get-changes:
+    name: 🔎 Get Changes
+    uses: ./.github/workflows/shared-get-changes.yml
+
+  test-e2e:
+    name: 🧹 Undo changes in CrazyActionsTests repo
+    needs: get-changes
+    if: needs.get-changes.outputs.action-modified == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: e2e-tests
+      cancel-in-progress: false
+    steps:
+      - name: Checkout cangulo-actions/CrazyActionsTests for e2e tests
+        uses: actions/checkout@v4.1.1
+        with:
+          repository: cangulo-actions/CrazyActionsTests
+          ref: main
+          fetch-tags: true
+          token: ${{ secrets.GH_AUTOMATION_TOKEN }}
+
+      - name: Checkout semver repository
+        uses: actions/checkout@v4.1.1
+        with:
+          path: semver-repo
+
+      - name: install packages
+        working-directory: semver-repo
+        run: npm install
+
+      - name: update cd.yml to target cangulo-actions/semver@main
+        working-directory: semver-repo
+        env:
+          TEST_ID: PR_1_COMMIT_NO_RELEASE
+          REPO_PATH: '../'
+          CC_BRANCH: main
+          GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
+        run: npm run test-e2e

@@ -1,0 +1,41 @@
+name: 🚀 continuous-delivery
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  semver:
+    name: 🚀 release new version
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.1.1
+      with:
+          token: ${{ secrets.GH_AUTOMATION_TOKEN }}
+    - name: release new version
+      uses: cangulo-actions/semver@main
+      id: semver
+      with:
+        create-gh-release: true
+        print-summary: true
+    - name: print semver output
+      if: ${{ steps.semver.outputs.version != '' }}
+      env:
+        CHANGES: ${{ steps.semver.outputs.changes }}
+        CHANGELOG_RECORD: ${{ steps.semver.outputs.changelog-record }}
+        SCOPES: ${{ steps.semver.outputs.scopes }}
+      run: |
+        echo "version:        ${{ steps.semver.outputs.version }}"
+        echo "release-title:  ${{ steps.semver.outputs.release-title }}"
+        echo "release-type:   ${{ steps.semver.outputs.release-type }}"
+
+        echo "changes:"
+        echo "$CHANGES" | jq .
+
+        echo "changes-log:"
+        echo "$CHANGELOG_RECORD"
+
+        echo "scopes:"
+        echo "$SCOPES" | jq .

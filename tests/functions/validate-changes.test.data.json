@@ -1,0 +1,131 @@
+{
+    "scopesConfig": {
+        "tfm": {
+            "files": [
+                "terraform/**"
+            ]
+        },
+        "src": {
+            "files": [
+                "src/**"
+            ]
+        }
+    },
+    "scenarios": [
+        {
+            "scenario": "Valid Change provided",
+            "enabled": false,
+            "input": {
+                "changes": [
+                    {
+                        "scopes": [
+                            "src"
+                        ],
+                        "type": "feat",
+                        "originalCommit": "feat(src): #879 added new endpoints to API definition",
+                        "commitId": "39dae30e0dc430e236b4b04f5c2a97e43cdcac01",
+                        "files": [
+                            "src/api.definition.json",
+                            "README.md"
+                        ]
+                    }
+                ]
+            },
+            "errors": []
+        },
+        {
+            "scenario": "non existing scope provided",
+            "enabled": false,
+            "input": {
+                "changes": [
+                    {
+                        "scopes": [
+                            "db"
+                        ],
+                        "type": "fix",
+                        "originalCommit": "fix(db): #221 increased DB size to fix performance issue",
+                        "commitId": "39dae30e0dc430e236b4b04f5c2a97e43cdcac01",
+                        "files": [
+                            "terraform/db.tf",
+                            "README.md"
+                        ]
+                    }
+                ]
+            },
+            "errors": [
+                "The next commit contains not expected scopes"
+            ]
+        },
+        {
+            "scenario": "files modified do not match the scope",
+            "enabled": false,
+            "input": {
+                "changes": [
+                    {
+                        "scopes": [
+                            "src"
+                        ],
+                        "type": "fix",
+                        "originalCommit": "fix(src): #221 increased DB size to fix performance issue",
+                        "commitId": "39dae30e0dc430e236b4b04f5c2a97e43cdcac01",
+                        "files": [
+                            "terraform/db.tf",
+                            "README.md"
+                        ]
+                    }
+                ]
+            },
+            "errors": [
+                "Files modified do not match the expected patterns for the scope src"
+            ]
+        },
+        {
+            "scenario": "missing scope in the commit message",
+            "enabled": true,
+            "input": {
+                "changes": [
+                    {
+                        "scopes": [
+                            "src"
+                        ],
+                        "type": "feat",
+                        "originalCommit": "feat(src): #879 added new endpoints to API definition and update DB size",
+                        "commitId": "39dae30e0dc430e236b4b04f5c2a97e43cdcac01",
+                        "files": [
+                            "terraform/db.tf",
+                            "src/api.definition.json",
+                            "README.md"
+                        ]
+                    }
+                ]
+            },
+            "errors": [
+                "Missing the next scopes in the commit message"
+            ]
+        },
+        {
+            "scenario": "invalid commit type provided",
+            "enabled": true,
+            "input": {
+                "changes": [
+                    {
+                        "scopes": [
+                            "src"
+                        ],
+                        "type": "wrong",
+                        "originalCommit": "wrong(src): #879 added new endpoints to API definition and update DB size",
+                        "commitId": "39dae30e0dc430e236b4b04f5c2a97e43cdcac01",
+                        "files": [
+                            "terraform/db.tf",
+                            "src/api.definition.json",
+                            "README.md"
+                        ]
+                    }
+                ]
+            },
+            "errors": [
+                "The next commit type is not supported: \"wrong\""
+            ]
+        }
+    ]
+}
