@@ -27,10 +27,13 @@ jobs:
             js:
               - index.js
               - functions/**
-              - package.json|package-lock.json
+              - package.json
+              - package-lock.json
             tests:
               - tests/index/**
               - tests/functions/**
             action:
               - action.yml
-              - tests/e2e/**
+              - cypress/**
+              - package.json
+              - package-lock.json

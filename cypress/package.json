@@ -1,0 +1,19 @@
+{
+  "name": "cangulo-actions-conventional-commits-validator-cypress-e2e",
+  "dependencies": {
+    "@badeball/cypress-cucumber-preprocessor": "19.2.0",
+    "@cypress/browserify-preprocessor": "3.0.2",
+    "cypress": "13.6.1"
+  },
+  "devDependencies": {
+    "cypress-terminal-report": "^5.3.9",
+    "cypress-wait-until": "^3.0.1",
+    "eslint": "^8.55.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-cypress": "^2.15.1",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-jest": "^27.6.0",
+    "eslint-plugin-n": "^16.3.1",
+    "eslint-plugin-promise": "^6.1.1"
+  }
+}
