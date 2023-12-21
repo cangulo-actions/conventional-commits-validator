@@ -131,14 +131,19 @@ jobs:
         uses: cypress-io/github-action@v6.6.0
         env:
           CYPRESS_BEFORE_ALL_PREPARE_REPO_ENABLED: "true" # execute reset-repo before and after tests
-          CYPRESS_BEFORE_ALL_CLOSE_ANY_PR: "true" # execute reset-repo before and after tests
+          CYPRESS_BEFORE_ALL_CLOSE_ANY_PR: "true"
         with:
           spec: cypress/e2e/smoke-test.feature
 
-      - name: 🎪 e2e tests
+      - name: 🎪 e2e tests happy path
+        uses: cypress-io/github-action@v6.6.0
+        with:
+          spec: cypress/e2e/pr-with-valid-commits.feature
+
+      - name: 🎪 e2e tests invalid commits
         uses: cypress-io/github-action@v6.6.0
         env:
-          CYPRESS_AFTER_ALL_PREPARE_REPO_ENABLED: "true"  # execute reset-repo before and after tests
-          CYPRESS_AFTER_ALL_CLOSE_ANY_PR: "true" # execute reset-repo before and after tests
+          CYPRESS_AFTER_ALL_PREPARE_REPO_ENABLED: "true"  # execute reset-repo after tests
+          CYPRESS_AFTER_ALL_CLOSE_ANY_PR: "true"
         with:
-          spec: cypress/e2e/pr-created.feature
+          spec: cypress/e2e/pr-with-invalid-commits.feature
