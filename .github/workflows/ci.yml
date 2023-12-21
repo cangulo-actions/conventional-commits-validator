@@ -68,46 +68,77 @@ jobs:
           path: reports/jest-*.xml
           reporter: jest-junit
 
-  test-e2e:
-    name: 🧪 E2E Tests in CrazyActionsTests repo
+  prepare-test-e2e:
+    name: 🥡 zip cypress tests
     needs: get-changes
     if: needs.get-changes.outputs.action-modified == 'true'
     runs-on: ubuntu-latest
-    concurrency:
-      group: e2e-tests
-      cancel-in-progress: false
     steps:
-      - name: Checkout cangulo-actions/CrazyActionsTests for e2e tests
+      - name: Checkout cc repository
+        uses: actions/checkout@v4.1.1
+
+      - name: create cypress artifact
+        uses: actions/upload-artifact@v4.0.0
+        with:
+          name: cypress
+          path: cypress
+
+  test-e2e:
+    name: 📽️ Execute Cypress in CrazyActionsTests repo
+    needs:
+      - prepare-test-e2e
+      - get-changes
+    if: needs.get-changes.outputs.action-modified == 'true'
+    concurrency:  # concurrency set to avoid conflicts pushing to CrazyActionsTests repo
+      group: e2e-tests
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    env:
+      CYPRESS_GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
+      CYPRESS_GH_API_URL: https://api.github.com/repos/cangulo-actions/CrazyActionsTests
+      CYPRESS_WAIT_TIME_CI_WORKFLOW: 25000  # wait 25 seconds before checking the CD workflow
+      CYPRESS_API_RETRY_INTERVAL_MS: 10000  # retry every 10 seconds
+      CYPRESS_API_RETRY_TIMEOUT_MS: 40000   # timeout after 40 seconds of retry
+      CYPRESS_CC_BRANCH: ${{ github.head_ref }}
+      CYPRESS_CC_PR_NUMBER: ${{ github.event.number }}
+      CYPRESS_BRANCH_TO_CREATE: test-cc-pr-${{ github.event.number }}
+      CYPRESS_GH_WORKFLOW_PREPARE_REPO_TIMEOUT: 30000 # wait 30 seconds before checking the reset repo workflow
+    steps:
+      - name: Checkout cangulo-actions/CrazyActionsTests repository
         uses: actions/checkout@v4.1.1
         with:
           repository: cangulo-actions/CrazyActionsTests
           ref: main
-          fetch-tags: true
-          fetch-depth: 10 # fetch last 10 commits
           token: ${{ secrets.GH_AUTOMATION_TOKEN }}
 
-      - name: Checkout semver repository
-        uses: actions/checkout@v4.1.1
+      - name: configure git credentials
+        run: |
+          git config user.name  "cangulo-cc-e2e-test[bot]"
+          git config user.email "cangulo-cc-e2e-test[bot]@users.noreply.github.com"
+
+      - name: 🥡 Download cypress artifact
+        uses: actions/download-artifact@v4.1.0
         with:
-          path: semver-repo
+          name: cypress
+          path: cypress-cc
 
-      - name: install packages
-        working-directory: semver-repo
-        run: npm install
+      - name: move cypress folder to root
+        run: |
+          rm -rf cypress                        # remove any local cypress folder
+          mv cypress-cc/* . --force --verbose   # move cypress from artifact to root
 
-      - name: run e2e tests (create and merge PR in CrazyActionsTests repo)
-        working-directory: semver-repo
+      - name: 🚬 smoke tests
+        uses: cypress-io/github-action@v6.6.0
         env:
-          REPO_PATH: '../'
-          CC_BRANCH: ${{ github.head_ref }}
-          TEST_DATA_PATH: ./tests/e2e/e2e.test.data.json
-          GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
-        run: npm run test-e2e
-          
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
+          CYPRESS_BEFORE_ALL_PREPARE_REPO_ENABLED: "true" # execute reset-repo before and after tests
+          CYPRESS_BEFORE_ALL_CLOSE_ANY_PR: "true" # execute reset-repo before and after tests
         with:
-          name: E2E Tests in CrazyActionsTests repo   # Name of the check run which will be created
-          path: semver-repo/reports/jest-*.xml
-          reporter: jest-junit
+          spec: cypress/e2e/smoke-test.feature
+
+      - name: 🎪 e2e tests
+        uses: cypress-io/github-action@v6.6.0
+        env:
+          CYPRESS_AFTER_ALL_PREPARE_REPO_ENABLED: "true"  # execute reset-repo before and after tests
+          CYPRESS_AFTER_ALL_CLOSE_ANY_PR: "true" # execute reset-repo before and after tests
+        with:
+          spec: cypress/e2e/pr-created.feature
