@@ -14,8 +14,23 @@ Given('I commit the next change {string}', (commitMsg) => {
 })
 
 Given('I commit the next changes', (table) => {
-  const commitMsgs = table.rows().map(row => row[0])
-  commitAndPushChanges(commitMsgs)
+  const branch = Cypress.env('BRANCH_TO_CREATE')
+  table
+    .rows().forEach(row => {
+      const commitMsg = row[0]
+      if (row.length === 1) {
+        cy.exec(`git commit --allow-empty -m "${commitMsg}"`)
+      } else {
+        const file = row[1]
+        const currentTime = new Date().toISOString()
+        const content = `# refresh ${currentTime}`
+        cy
+          .writeFile(file, content)
+          .exec(`git add "${file}"`)
+          .exec(`git commit -m "${commitMsg}"`)
+      }
+    })
+  push(branch)
 })
 
 function commitAndPushChanges (commitMsgs) {
@@ -24,6 +39,9 @@ function commitAndPushChanges (commitMsgs) {
   commitMsgs.forEach(commitMsg => {
     cy.exec(`git commit --allow-empty -m "${commitMsg}"`)
   })
+  push(branch)
+}
 
+function push (branch) {
   cy.exec(`git push origin ${branch} --force`)
 }
