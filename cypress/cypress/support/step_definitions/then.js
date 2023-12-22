@@ -1,6 +1,6 @@
 const { Then } = require('@badeball/cypress-cucumber-preprocessor')
 
-Then('the CI workflow triggered must succeed', () => {
+Then('the CI workflow triggered must conclude in {string}', (result) => {
   const waitTimeCI = Cypress.env('WAIT_TIME_CI_WORKFLOW')
   const retryInterval = Cypress.env('API_RETRY_INTERVAL_MS')
   const maxTimeout = Cypress.env('API_RETRY_TIMEOUT_MS')
@@ -21,7 +21,7 @@ Then('the CI workflow triggered must succeed', () => {
           cy
             .getCommitCheckRuns({ commitId: prHeadSHA, checkName, status })
             .then((checkRuns) => {
-              expect(checkRuns[0].conclusion).to.equal('success', 'the CI workflow must succeed.')
+              expect(checkRuns[0].conclusion).to.equal(result, `the CI workflow must result in ${result}`)
               cy
                 .task('getSharedDataByKey', 'PR_NUMBER')
                 .then((prNumber) => {

@@ -12,13 +12,12 @@ const repoChangesConfig = {
 
 function Index (core, conf, commits) {
   core.startGroup('Changes')
-  console.log('changes:')
 
   const unconventionalCommits = commits.filter(x => !isConventional(x.message))
   if (unconventionalCommits.length > 0) {
     core.summary
       .addHeading('🛑 Invalid commits:')
-      .addList(unconventionalCommits)
+      .addCodeBlock(JSON.stringify(unconventionalCommits, null, 2), 'json')
       .addSeparator()
       .addHeading('Commit Conventions:')
       .addCodeBlock(JSON.stringify(conf, null, 2), 'json')
@@ -35,6 +34,7 @@ function Index (core, conf, commits) {
       console.log(JSON.stringify(parsedChange, null, 2))
       return parsedChange
     })
+  console.log('changes:', changes)
   core.setOutput('changes', changes)
   core.endGroup()
 
