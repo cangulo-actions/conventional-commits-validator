@@ -1,32 +1,35 @@
 const { validateChanges } = require('../../functions/validate-changes')
 const fs = require('fs')
+const yml = require('js-yaml')
 
 describe('Validate Changes', () => {
   const testDataContent = fs.readFileSync('./tests/functions/validate-changes.test.data.json')
   const testData = JSON.parse(testDataContent)
-  const defaultConfigContent = fs.readFileSync('default-config.json')
-  const defaultConfig = JSON.parse(defaultConfigContent)
-  const supportedCommitTypes = Object.keys(defaultConfig.changeTypes)
-  const scopesConfig = testData.scopesConfig
-  const scenarios = testData.scenarios
 
-  scenarios.filter(x => x.enabled).forEach(data => {
-    const testName = `${data.scenario}\n` +
-      `input:\n\t${JSON.stringify(data.input, null, 2)}\n` +
-      `errors:\n\t${JSON.stringify(data.errors, null, 2)}`
-
-    it(testName,
-      () => {
+  testData
+    .filter(x => x.enabled)
+    .forEach(data => {
+      it(data.scenario,
+        () => {
         // arrange
-        const changes = data.input.changes
+          const configPath = data.configuration || 'default-config.yml'
+          const configContent = fs.readFileSync(configPath)
+          const conf = yml.load(configContent)
+          const supportedCommitTypes = conf.commits.map(x => x.type)
+          const scopesConfig = conf.scopes || []
 
-        // act
-        const errors = validateChanges(changes, supportedCommitTypes, scopesConfig)
+          const changes = data.input.changes
 
-        // assert
-        // validate errors length
-        expect(errors.length).toBe(data.errors.length)
-        expect(errors[0].message).toBe(data.errors[0])
-      })
-  })
+          // act
+          const errors = validateChanges(changes, supportedCommitTypes, scopesConfig)
+
+          // assert
+          expect(errors.length).toEqual(data.errorMessages.length)
+          if (errors.length > 0) {
+            errors.forEach((error, index) => {
+              expect(error.message).toEqual(data.errorMessages[index])
+            })
+          }
+        })
+    })
 })

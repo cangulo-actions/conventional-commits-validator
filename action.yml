@@ -1,12 +1,24 @@
-name: '🚀 semver create release'
-description: 'Get the commits from the last commit'
+name: '🚔️ Commits Validation'
+description: 'Validate the commits in the PR'
 inputs:
   configuration:
-    description: 'flag for creating GH release'
+    description: 'path to the YML configuration'
     required: true
     default: ''
-  add-labels-to-pr:
-    description: 'flag adding labels to the PR. Available labels: {release-type:[major, minor, patch, no-release]}'
+  add-next-release-type-as-label-to-pr:
+    description: >
+      flag for adding the release type as a label to the PR.
+      Format: 'release-type:<value>'
+      Release Types: 'major', 'minor', 'patch', 'no-release'
+      Example: 'release-type:major'
+    required: true
+    default: 'true'
+  add-commit-types-as-labels-to-pr:
+    description: >
+      flag for adding each commit type as a label to the PR.
+      Format: '<commit-type>'
+      Commit Types: defined in the ./default-config.yml or in the inputs.configuration file
+      Example: 'fix,docs'
     required: true
     default: 'true'
   print-summary:
@@ -42,24 +54,55 @@ runs:
               throw new Error(`This GH action only supports pull_request events.`)
           }
 
-    - name: Validate inputs
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm install --omit=dev
+
+    - name: Validate input Configuration
       if: ${{ inputs.configuration != '' }}
       uses: actions/github-script@v7
+      env:
+        CONFIG: ${{ inputs.configuration }}
+        NODE_MODULES_PATH: ${{ github.action_path }}/node_modules
       with:
         script: |
-          const fs        = require('fs')        
-          const confPath  =  '${{ inputs.configuration }}'
-
-          if (!fs.existsSync(confPath)) {
-            core.setFailed(`configuration file not found: ${confPath}`)
+          const fs          = require('fs')
+          const yml         = require(`${process.env.NODE_MODULES_PATH}/js-yaml`)
+          const schemaPath  = process.env.SCHEMA
+          const configPath  = process.env.CONFIG
+          
+          if (!fs.existsSync(configPath)) {
+            core.setFailed(`configuration file not found: ${configPath}`)
           }
 
-          const configContent = fs.readFileSync(confPath)
-          const conf          = JSON.parse(configContent)
+          const configContent = fs.readFileSync(configPath)
+          const config        = yml.load(configContent)
+
+          core.startGroup('Validating input configuration')
+          console.log('config:', JSON.stringify(config, null, 2))
+          core.endGroup()
+
+    - name: Set Configuration
+      uses: actions/github-script@v7
+      id: config
+      env:
+        CONFIG: ${{ inputs.configuration != '' && inputs.configuration || format('{0}/default-config.yml', github.action_path) }}
+        NODE_MODULES_PATH: ${{ github.action_path }}/node_modules
+      with:
+        script: |
+          const fs    = require('fs')
+          const yml   = require(`${process.env.NODE_MODULES_PATH}/js-yaml`)
+
+          const configContent = fs.readFileSync(process.env.CONFIG)
+          const conf          = yml.load(configContent)
 
           core.startGroup('Configuration')
-          console.log(conf, null, 2)
+          console.log('config:', JSON.stringify(conf, null, 2))
           core.endGroup()
+
+          core.setOutput('config', conf)
 
     - name: Get commit messages
       uses: actions/github-script@v7
@@ -94,56 +137,142 @@ runs:
 
           core.setOutput('commits', commits)
 
-    - name: Install dependencies
-      shell: bash
-      working-directory: ${{ github.action_path }}
-      run: |
-        npm install --omit=dev
-
-    - name: Validate Commits
+    - name: >
+        Ensure all commits follow conventional commit format `type(scope): description`
       uses: actions/github-script@v7
-      id: validate-commits
       env:
-        USE_INPUT_CONFIG: ${{ inputs.configuration != '' }}
-        INPUT_CONFIG: ${{ inputs.configuration }}
-        DEFAULT_CONFIG: ${{ github.action_path }}/default-config.json
         COMMITS: ${{ steps.get-commits.outputs.commits }}
       with:
         script: |
-          const fs            = require('fs')        
-          const { Index }     = require('${{ github.action_path }}/index.js')
+          const { isConventional}     = require('${{ github.action_path }}/functions/parse-change')
+          const commits               = JSON.parse(process.env.COMMITS)
 
-          const confPath      = process.env.USE_INPUT_CONFIG === 'true' ? process.env.INPUT_CONFIG : process.env.DEFAULT_CONFIG
-          const configContent = fs.readFileSync(confPath)
-          const conf          = JSON.parse(configContent)
-          const commits       = JSON.parse(process.env.COMMITS)
+          const unconventionalCommits = commits.filter(x => !isConventional(x.message))
 
-          Index(core, conf, commits)
+          if (unconventionalCommits.length > 0) {
+            core.summary
+              .addHeading('🛑 Invalid commits:')
+              .addCodeBlock(JSON.stringify(unconventionalCommits, null, 2), 'json')
+              .write()
+            core.setFailed('Errors found validating the commits. Please Check the summary.')
+          }
+
+    - name: Parse the changes
+      uses: actions/github-script@v7
+      id: list-changes
+      env:
+        CONFIG: ${{ steps.config.outputs.config }} 
+        COMMITS: ${{ steps.get-commits.outputs.commits }}
+      with:
+        script: |
+          const { parseChange } = require('${{ github.action_path }}/functions/parse-change')
+          const commits         = JSON.parse(process.env.COMMITS)
+          const conf            = JSON.parse(process.env.CONFIG)
+
+          const changes = commits
+            .map(x => {
+              const parsedChange = parseChange(x.message, conf.commits)
+              parsedChange.commitId = x.id
+              parsedChange.files = x.files
+              return parsedChange
+            })
+
+          core.startGroup('Changes')
+          console.log('changes:', JSON.stringify(changes, null, 2))
+          core.endGroup()
+
+          core.setOutput('changes', changes)
+
+    - name: Validate changes
+      uses: actions/github-script@v7
+      env:
+        CONFIG: ${{ steps.config.outputs.config }}
+        CHANGES: ${{ steps.list-changes.outputs.changes }}
+      with:
+        script: |
+          const { validateChanges }   = require('${{ github.action_path }}/functions/validate-changes')
+          const conf                  = JSON.parse(process.env.CONFIG)
+          const changes               = JSON.parse(process.env.CHANGES)
+
+          const supportedCommitTypes  = conf.commits.map(x => x.type)
+          const errors                = validateChanges(changes, supportedCommitTypes, conf.scopes)
+
+          if (errors.length > 0) {
+            const errorsJSON = JSON.stringify(errors, null, 2)
+            core.summary
+              .addHeading('🛑 Errors Found validations commits:')
+              .addCodeBlock(errorsJSON, 'json')
+              .addSeparator()
+              .addHeading('Configuration:')
+              .addCodeBlock(JSON.stringify(conf, null, 2), 'json')
+              .write()
+            core.setFailed('Errors found validating the commits. Please Check the summary.')
+          }
+
+    - name: Calculate next release
+      uses: actions/github-script@v7
+      id: validate-commits
+      env:
+        CONFIG: ${{ steps.config.outputs.config }}
+        CHANGES: ${{ steps.list-changes.outputs.changes }}
+      with:
+        script: |
+          const { buildNextReleases }   = require('${{ github.action_path }}/functions/build-next-releases')
+          const conf                    = JSON.parse(process.env.CONFIG)
+          const changes                 = JSON.parse(process.env.CHANGES)
+
+          const result = buildNextReleases(conf, changes)
+
+          core.startGroup('Next Release')
+          console.log('next release:', JSON.stringify(result, null, 2))
+          core.endGroup()
+
+          core.setOutput('next-release-triggered', result.releaseRequired)
+          core.setOutput('next-version', result.version)
+          core.setOutput('next-release-type', result.releaseType)
+          core.setOutput('scopes', result.scopes)
 
     - name: add labels to the PR
-      if: ${{  inputs.add-labels-to-pr == 'true' }}
+      if: >
+        inputs.add-next-release-type-as-label-to-pr == 'true' || 
+        inputs.add-commit-types-as-labels-to-pr     == 'true'
       uses: actions/github-script@v7
       env:
         RELEASE_TRIGGERED: ${{ steps.validate-commits.outputs.next-release-triggered }}
         NEXT_RELEASE_TYPE: ${{ steps.validate-commits.outputs.next-release-type }}
-        CHANGES: ${{ steps.validate-commits.outputs.changes }}
+        CHANGES: ${{ steps.list-changes.outputs.changes }}
+        ADD_RELEASE_TYPE_AS_LABEL: ${{ inputs.add-next-release-type-as-label-to-pr }}
+        ADD_COMMIT_TYPES_AS_LABELS: ${{ inputs.add-commit-types-as-labels-to-pr }}
       with:
         script: |
-          const releaseTriggered = process.env.RELEASE_TRIGGERED === 'true'
-          const nextReleaseType = releaseTriggered ? process.env.NEXT_RELEASE_TYPE : 'no-release'
+          const releaseTriggered  = process.env.RELEASE_TRIGGERED === 'true'
+          const nextReleaseType   = releaseTriggered ? process.env.NEXT_RELEASE_TYPE : 'no-release'
+          const changes           = JSON.parse(process.env.CHANGES)
+          const addReleaseType    = process.env.ADD_RELEASE_TYPE_AS_LABEL === 'true'
+          const addCommitTypes    = process.env.ADD_COMMIT_TYPES_AS_LABELS === 'true'
 
-          labels = [`release-type:${nextReleaseType}`]
+          labels = []
 
-          // add commit types as labels
-          const changes = JSON.parse(process.env.CHANGES).map(change => change.type).filter((value, index, self) => self.indexOf(value) === index)
-          changes.forEach(change => labels.push(`change:${change}`))
+          if(addReleaseType) {
+            labels.push(`release-type:${nextReleaseType}`)
+          }
+
+          if(addCommitTypes) {
+            changes
+              .map(change => change.type)
+              .filter((value, index, self) => self.indexOf(value) === index)
+              .forEach(change => labels.push(change))
+          }
+
+          // ensure changes are uniques
+          labels = labels.filter((value, index, self) => self.indexOf(value) === index)
 
           await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              labels: labels
-            })
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            labels: labels
+              })
 
     - name: printing summary
       if: ${{ inputs.print-summary == 'true' }}
@@ -157,7 +286,7 @@ runs:
           const releaseTriggered = process.env.RELEASE_TRIGGERED === 'true'
 
           if (releaseTriggered) {
-            const nextVersion = process.env.NEXT_VERSION
+            const nextVersion     = process.env.NEXT_VERSION
             const nextReleaseType = process.env.NEXT_RELEASE_TYPE
 
             core.summary

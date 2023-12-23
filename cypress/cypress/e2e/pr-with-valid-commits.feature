@@ -7,11 +7,11 @@ Feature: CI workflow succeed after a PR is created
     Then the CI workflow triggered must conclude in "success"
 
     Examples: 
-      | commitMsg                                       | prTitle        | 
-      | fix: commit that fixes something                |   1 fix commit | 
-      | ci: commit that won't trigger a release         |    1 ci commit | 
-      | feat: commit that adds a feature                |  1 feat commit | 
-      | break: commit that introduces a breaking change | 1 break commit | 
+      | commitMsg                                       | prTitle        |
+      | fix: commit that fixes something                |   1 fix commit |
+      | ci: commit that won't trigger a release         |    1 ci commit |
+      | feat: commit that adds a feature                |  1 feat commit |
+      | break: commit that introduces a breaking change | 1 break commit |
 
   Scenario: PR with multiple commits without scopes
     Given I checkout a branch

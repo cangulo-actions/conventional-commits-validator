@@ -1,4 +1,5 @@
 const { parseChange } = require('../../functions/parse-change')
+const yml = require('js-yaml')
 const fs = require('fs')
 const testData = [
   {
@@ -57,8 +58,9 @@ describe('changes are properly parsed', () => {
   testData.forEach(data => {
     it(`change:\n\t${data.input}\nis parsed into:\n\t${JSON.stringify(data.output, null, 2)}`,
       () => {
-        const defaultConf = JSON.parse(fs.readFileSync('default-config.json'))
-        const changeTypes = defaultConf.changeTypes
+        const defaultConfigContent = fs.readFileSync('default-config.yml')
+        const defaultConf = yml.load(defaultConfigContent)
+        const changeTypes = defaultConf.commits
         const change = parseChange(data.input, changeTypes)
         expect(change).toEqual(data.output)
       })

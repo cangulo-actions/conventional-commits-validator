@@ -15,14 +15,16 @@ function validateChanges (changes, supportedTypes, scopesConfig) {
     })
   })
 
-  if (errors.length > 0) {
+  if (errors.length > 0 || scopesConfig.length === 0) {
     return errors
   }
 
-  const validateCommitWithScope = changes.some(change => change.scopes.length > 0) && scopesConfig
-  if (validateCommitWithScope) {
+  const commitsContainsScope = changes.some(change => change.scopes.length > 0)
+  if (commitsContainsScope) {
+    // validate scopes provided are supported
+    const supportedScopes = scopesConfig.map(x => x.key)
     changes
-      .filter(x => x.scopes.some(scope => !scopesConfig[scope]))
+      .filter(x => x.scopes.some(scope => !supportedScopes.includes(scope)))
       .forEach(change => {
         errors.push({
           message: 'The next commit contains not expected scopes',
@@ -37,12 +39,13 @@ function validateChanges (changes, supportedTypes, scopesConfig) {
       return errors
     }
 
+    // validate files modified for each scope
     for (const change of changes) {
       const scopes = change.scopes
       const filesModified = change.files
 
       scopes.forEach(scope => {
-        const acceptedPatterns = scopesConfig[scope].files
+        const acceptedPatterns = scopesConfig.find(x => x.key === scope).files
         const atLeastOnePatternMatch = filesModified.some(fileModified => picomatch.isMatch(fileModified, acceptedPatterns))
         if (!atLeastOnePatternMatch) {
           errors.push({
@@ -58,32 +61,36 @@ function validateChanges (changes, supportedTypes, scopesConfig) {
       if (errors.length > 0) {
         return errors
       }
-
-      let expectedScopes = []
-
-      filesModified.forEach(file => {
-        for (const scope of Object.keys(scopesConfig)) {
-          const acceptedPatterns = scopesConfig[scope].files
-          const atLeastOnePatternMatch = picomatch.isMatch(file, acceptedPatterns)
-          if (atLeastOnePatternMatch) {
-            expectedScopes.push(scope)
-          }
-        }
-      })
-      expectedScopes = [...new Set(expectedScopes)].sort()
-      const scopesProvided = scopes.sort()
-
-      const missingScopes = expectedScopes.filter(scope => !scopesProvided.includes(scope))
-      if (missingScopes.length > 0) {
-        errors.push({
-          message: 'Missing the next scopes in the commit message',
-          commitMsg: change.originalCommit,
-          missingScopes
-        })
-      }
     }
   }
 
+  // validate no commit misses a scope based on the files modified
+  for (const change of changes) {
+    const filesModified = change.files
+    let expectedScopes = []
+
+    filesModified.forEach(file => {
+      for (const scopeConfig of Object.values(scopesConfig)) {
+        const atLeastOnePatternMatch = picomatch.isMatch(file, scopeConfig.files)
+        if (atLeastOnePatternMatch) {
+          expectedScopes.push(scopeConfig.key)
+        }
+      }
+    })
+    expectedScopes = [...new Set(expectedScopes)].sort()
+    const missingScopes = expectedScopes.filter(x => !change.scopes.includes(x))
+    if (missingScopes.length > 0) {
+      errors.push({
+        message: 'Missing the next scopes in the commit message',
+        commitMsg: change.originalCommit,
+        missingScopes
+      })
+    }
+
+    if (errors.length > 0) {
+      return errors
+    }
+  }
   return errors
 }
 
