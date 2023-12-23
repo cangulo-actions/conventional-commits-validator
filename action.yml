@@ -17,7 +17,7 @@ inputs:
     description: >
       flag for adding each commit type as a label to the PR.
       Format: '<commit-type>'
-      Commit Types: defined in the ./default-config.yml or in the inputs.configuration file
+      Commit Types: defined in the ./config.default.yml or in the inputs.configuration file
       Example: 'fix,docs'
     required: true
     default: 'true'
@@ -60,11 +60,12 @@ runs:
       run: |
         npm install --omit=dev
 
-    - name: Validate input Configuration
-      if: ${{ inputs.configuration != '' }}
+    - name: Process configuration
       uses: actions/github-script@v7
+      id: config
       env:
-        CONFIG: ${{ inputs.configuration }}
+        INPUT_CONFIG: ${{ inputs.configuration }}
+        DEFAULT_CONFIG : ${{ github.action_path }}/config.default.yml
         NODE_MODULES_PATH: ${{ github.action_path }}/node_modules
         SCHEMA: ${{ github.action_path }}/config.schema.yml
       with:
@@ -73,19 +74,16 @@ runs:
           const Ajv = require(`${process.env.NODE_MODULES_PATH}/ajv`)
           const fs  = require('fs')
 
-          const schemaPath  = process.env.SCHEMA
-          const configPath  = process.env.CONFIG
-
-          if (!fs.existsSync(configPath)) {
-            core.setFailed(`configuration file not found: ${configPath}`)
-          }
+          const schemaPath    = process.env.SCHEMA
+          const inputConfig   = process.env.INPUT_CONFIG
+          const configPath    = inputConfig !== '' ? inputConfig : process.env.DEFAULT_CONFIG;
 
           const schemaContent = fs.readFileSync(schemaPath)
           const configContent = fs.readFileSync(configPath)
           const schema        = yml.load(schemaContent)
           const config        = yml.load(configContent)
 
-          const ajv       = new Ajv()
+          const ajv       = new Ajv({ useDefaults: true })  // add default values to the config properties
           const validate  = ajv.compile(schema)
           const valid     = validate(config)
 
@@ -94,29 +92,11 @@ runs:
             core.setFailed(`configuration file is not valid: ${errorsJson}`)
           }
 
-          core.startGroup('Validating input configuration')
+          core.startGroup('Configuration')
           console.log('config:', JSON.stringify(config, null, 2))
           core.endGroup()
 
-    - name: Set Configuration
-      uses: actions/github-script@v7
-      id: config
-      env:
-        CONFIG: ${{ inputs.configuration != '' && inputs.configuration || format('{0}/default-config.yml', github.action_path) }}
-        NODE_MODULES_PATH: ${{ github.action_path }}/node_modules
-      with:
-        script: |
-          const fs    = require('fs')
-          const yml   = require(`${process.env.NODE_MODULES_PATH}/js-yaml`)
-
-          const configContent = fs.readFileSync(process.env.CONFIG)
-          const conf          = yml.load(configContent)
-
-          core.startGroup('Configuration')
-          console.log('config:', JSON.stringify(conf, null, 2))
-          core.endGroup()
-
-          core.setOutput('config', conf)
+          core.setOutput('config', config)
 
     - name: Get commit messages
       uses: actions/github-script@v7
@@ -268,7 +248,7 @@ runs:
           labels = []
 
           if(addReleaseType) {
-            labels.push(`release-type:${nextReleaseType}`)
+            labels.push(nextReleaseType)
           }
 
           if(addCommitTypes) {

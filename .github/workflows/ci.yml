@@ -12,8 +12,8 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: Validate Conventional Commits
-        uses: cangulo-actions/conventional-commits-validator@main
+      - name: Validate Conventional Commits using the current branch
+        uses: ./
         id: validate-commits
 
   get-changes:

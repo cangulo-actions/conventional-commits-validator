@@ -22,7 +22,7 @@ describe('index.js Happy Paths', () => {
       // arrange
         fs.existsSync = (filePath) => data.files[filePath] !== undefined
         fs.readFileSync = (filePath) => data.files[filePath]
-        const configPath = data.configuration || 'default-config.yml'
+        const configPath = data.configuration || 'config.default.yml'
         const configContent = originalModule.readFileSync(configPath)
         const conf = yml.load(configContent)
 

@@ -12,7 +12,7 @@ describe('Validate Changes', () => {
       it(data.scenario,
         () => {
         // arrange
-          const configPath = data.configuration || 'default-config.yml'
+          const configPath = data.configuration || 'config.default.yml'
           const configContent = fs.readFileSync(configPath)
           const conf = yml.load(configContent)
           const supportedCommitTypes = conf.commits.map(x => x.type)

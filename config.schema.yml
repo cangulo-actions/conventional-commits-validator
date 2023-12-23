@@ -23,7 +23,7 @@ properties:
     type: array
     description: |
       The list of scopes that can be used in commit messages.
-    minItems: 1
+    default: []
     uniqueItems: true
     items:
       type: object
