@@ -66,19 +66,33 @@ runs:
       env:
         CONFIG: ${{ inputs.configuration }}
         NODE_MODULES_PATH: ${{ github.action_path }}/node_modules
+        SCHEMA: ${{ github.action_path }}/config.schema.yml
       with:
         script: |
-          const fs          = require('fs')
-          const yml         = require(`${process.env.NODE_MODULES_PATH}/js-yaml`)
+          const yml = require(`${process.env.NODE_MODULES_PATH}/js-yaml`)
+          const Ajv = require(`${process.env.NODE_MODULES_PATH}/ajv`)
+          const fs  = require('fs')
+
           const schemaPath  = process.env.SCHEMA
           const configPath  = process.env.CONFIG
-          
+
           if (!fs.existsSync(configPath)) {
             core.setFailed(`configuration file not found: ${configPath}`)
           }
 
+          const schemaContent = fs.readFileSync(schemaPath)
           const configContent = fs.readFileSync(configPath)
+          const schema        = yml.load(schemaContent)
           const config        = yml.load(configContent)
+
+          const ajv       = new Ajv()
+          const validate  = ajv.compile(schema)
+          const valid     = validate(config)
+
+          if (!valid) {
+            const errorsJson = JSON.stringify(validate.errors, null, 2)
+            core.setFailed(`configuration file is not valid: ${errorsJson}`)
+          }
 
           core.startGroup('Validating input configuration')
           console.log('config:', JSON.stringify(config, null, 2))
