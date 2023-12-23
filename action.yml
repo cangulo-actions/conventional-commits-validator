@@ -21,7 +21,7 @@ inputs:
       Example: 'fix,docs'
     required: false
     default: 'false'
-  add-commit-commits-as-labels-to-pr:
+  add-commit-scopes-as-labels-to-pr:
     description: flag for adding all scopes as labels to the PR.
     required: false
     default: 'false'
@@ -234,7 +234,7 @@ runs:
       if: >
         inputs.add-next-release-type-as-label-to-pr == 'true' || 
         inputs.add-commit-types-as-labels-to-pr     == 'true' ||
-        inputs.add-commit-commits-as-labels-to-pr   == 'true'
+        inputs.add-commit-scopes-as-labels-to-pr    == 'true'
       uses: actions/github-script@v7
       env:
         RELEASE_TRIGGERED: ${{ steps.validate-commits.outputs.next-release-triggered }}
@@ -242,13 +242,14 @@ runs:
         CHANGES: ${{ steps.list-changes.outputs.changes }}
         ADD_RELEASE_TYPE_AS_LABEL: ${{ inputs.add-next-release-type-as-label-to-pr }}
         ADD_COMMIT_TYPES_AS_LABELS: ${{ inputs.add-commit-types-as-labels-to-pr }}
-        ADD_SCOPES_AS_LABELS: ${{ inputs.add-commit-commits-as-labels-to-pr }}
+        ADD_SCOPES_AS_LABELS: ${{ inputs.add-commit-scopes-as-labels-to-pr }}
       with:
         script: |
           const releaseTriggered  = process.env.RELEASE_TRIGGERED === 'true'
           const changes           = JSON.parse(process.env.CHANGES)
-          const addReleaseType    = process.env.ADD_RELEASE_TYPE_AS_LABEL === 'true'
-          const addCommitTypes    = process.env.ADD_COMMIT_TYPES_AS_LABELS === 'true'
+          const addReleaseType    = process.env.ADD_RELEASE_TYPE_AS_LABEL   === 'true'
+          const addCommitTypes    = process.env.ADD_COMMIT_TYPES_AS_LABELS  === 'true'
+          const addScopes         = process.env.ADD_SCOPES_AS_LABELS        === 'true'
 
           labels = []
 
