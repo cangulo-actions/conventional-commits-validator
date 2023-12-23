@@ -1,0 +1,49 @@
+type: object
+properties:
+  commits:
+    type: array
+    description: |
+      The list of commit types and their corresponding release types.
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: object
+      properties:
+        type:
+          type: string
+          examples: [break, feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]
+        release:
+          type: string
+          enum: [major, minor, patch, none]
+      required:
+        - type
+        - release
+
+  scopes:
+    type: array
+    description: |
+      The list of scopes that can be used in commit messages.
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: object
+      properties:
+        key:
+          type: string
+          description: |
+            "key provided in the commit messages example: 'feat(core): add new feature'"
+        versioning:
+          type: object
+          description: |
+            The versioning configuration for the scope.
+          properties:
+            file:
+              type: string
+              description: |
+                JSON file where the version is stored
+            changelog:
+              type: string
+              description: |
+                markdown file where the changelog is stored
+required:
+  - commits

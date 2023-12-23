@@ -91,7 +91,7 @@ jobs:
     if: needs.get-changes.outputs.action-modified == 'true'
     concurrency:  # concurrency set to avoid conflicts pushing to CrazyActionsTests repo
       group: e2e-tests
-      cancel-in-progress: true
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     env:
       CYPRESS_GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
