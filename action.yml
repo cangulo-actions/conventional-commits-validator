@@ -3,7 +3,7 @@ description: 'Validate the commits in the PR'
 inputs:
   configuration:
     description: 'path to the YML configuration'
-    required: true
+    required: false
     default: ''
   add-next-release-type-as-label-to-pr:
     description: >
@@ -11,16 +11,20 @@ inputs:
       Format: 'release-type:<value>'
       Release Types: 'major', 'minor', 'patch', 'no-release'
       Example: 'release-type:major'
-    required: true
-    default: 'true'
+    required: false
+    default: 'false'
   add-commit-types-as-labels-to-pr:
     description: >
       flag for adding each commit type as a label to the PR.
       Format: '<commit-type>'
       Commit Types: defined in the ./config.default.yml or in the inputs.configuration file
       Example: 'fix,docs'
-    required: true
-    default: 'true'
+    required: false
+    default: 'false'
+  add-commit-commits-as-labels-to-pr:
+    description: flag for adding all scopes as labels to the PR.
+    required: false
+    default: 'false'
   print-summary:
     description: 'flag for printing the release details to the GITHUB_STEP_SUMMARY'
     required: true
@@ -229,7 +233,8 @@ runs:
     - name: add labels to the PR
       if: >
         inputs.add-next-release-type-as-label-to-pr == 'true' || 
-        inputs.add-commit-types-as-labels-to-pr     == 'true'
+        inputs.add-commit-types-as-labels-to-pr     == 'true' ||
+        inputs.add-commit-commits-as-labels-to-pr   == 'true'
       uses: actions/github-script@v7
       env:
         RELEASE_TRIGGERED: ${{ steps.validate-commits.outputs.next-release-triggered }}
@@ -237,10 +242,10 @@ runs:
         CHANGES: ${{ steps.list-changes.outputs.changes }}
         ADD_RELEASE_TYPE_AS_LABEL: ${{ inputs.add-next-release-type-as-label-to-pr }}
         ADD_COMMIT_TYPES_AS_LABELS: ${{ inputs.add-commit-types-as-labels-to-pr }}
+        ADD_SCOPES_AS_LABELS: ${{ inputs.add-commit-commits-as-labels-to-pr }}
       with:
         script: |
           const releaseTriggered  = process.env.RELEASE_TRIGGERED === 'true'
-          const nextReleaseType   = releaseTriggered ? process.env.NEXT_RELEASE_TYPE : 'no-release'
           const changes           = JSON.parse(process.env.CHANGES)
           const addReleaseType    = process.env.ADD_RELEASE_TYPE_AS_LABEL === 'true'
           const addCommitTypes    = process.env.ADD_COMMIT_TYPES_AS_LABELS === 'true'
@@ -248,7 +253,9 @@ runs:
           labels = []
 
           if(addReleaseType) {
-            labels.push(nextReleaseType)
+            const nextReleaseType   = releaseTriggered ? process.env.NEXT_RELEASE_TYPE : 'no'
+            const label = `${nextReleaseType}-release`
+            labels.push(label)
           }
 
           if(addCommitTypes) {
@@ -256,6 +263,14 @@ runs:
               .map(change => change.type)
               .filter((value, index, self) => self.indexOf(value) === index)
               .forEach(change => labels.push(change))
+          }
+
+          if(addScopes) {
+            changes
+              .map(change => change.scopes)
+              .flat()
+              .filter((value, index, self) => self.indexOf(value) === index)
+              .forEach(scope => labels.push(scope))
           }
 
           // ensure changes are uniques
