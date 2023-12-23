@@ -1,3 +1,8 @@
+# 0.3.1 fix: #9 fixed input name (#21)
+
+## patches:
+* fix: #9 fixed input name (#21)
+
 # 0.3.0 feat: #9 added flag for adding commit scopes as label in the PR (#20)
 
 ## new features:
