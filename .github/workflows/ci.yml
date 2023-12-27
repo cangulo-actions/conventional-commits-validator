@@ -119,13 +119,13 @@ jobs:
             spec: cypress/e2e/invalid-commit-scope.feature
             branch-to-create: invalid-commit-scope
 
-          - scenario: Valid Scopes
-            spec: cypress/e2e/valid-scopes.feature
-            branch-to-create: valid-scopes
-
           - scenario: Valid Commit Types
             spec: cypress/e2e/valid-commit-types.feature
             branch-to-create: valid-commit-types
+
+          - scenario: Valid Scopes
+            spec: cypress/e2e/valid-commit-scopes.feature
+            branch-to-create: valid-commit-scopes
 
     env:
       CYPRESS_GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
