@@ -4,7 +4,6 @@ const { groupBy } = require('core-js/actual/array/group-by')
 
 const fs = require('fs')
 const repoChangesConfig = {
-  changelog: 'CHANGELOG.md',
   versionJsonPath: 'version.json'
 }
 
@@ -24,7 +23,7 @@ function buildNextReleases (conf, changes) {
     result.releaseType = nextReleaseType
 
     const scopesResult = {}
-    const scopesConfig = conf.scopes || []
+    const scopesConfig = conf.scopes
     if (scopesConfig.length > 0) {
       const changesByScope = changes
         .flatMap(change => change.scopes.map(scope => ({ scope, change })))
@@ -36,8 +35,7 @@ function buildNextReleases (conf, changes) {
       for (const [scope, changes] of Object.entries(changesByScope)) {
         const defaultScopeConfig = {
           versioning: {
-            file: `${scope}/version.json`,
-            changelog: `${scope}/CHANGELOG.md`
+            file: `${scope}/version.json`
           }
         }
         const scopeConfig = {

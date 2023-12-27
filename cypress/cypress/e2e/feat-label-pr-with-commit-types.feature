@@ -1,6 +1,6 @@
-Feature: Reject commits with invalid type
+Feature: Label PR with commit types
 
-  Background: The gh action is configured with the default settings
+  Background: The gh action runs with the default configuration
     Given I checkout a branch from main
     And I create the ".github/workflows/cc-test.yml" file with the next content:
       """
@@ -20,14 +20,19 @@ Feature: Reject commits with invalid type
       
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
+              with:
+                label-pr-with-commit-types: true
       """
     And I stage the file ".github/workflows/cc-test.yml"
-    And I create a commit with the message "ci: added cc-test.yml"
+    And I create a commit with the message "ci: added cc-test.yml with default config"
 
-  Scenario: Commit with invalid type
-    Given I modify and stage the file: "refresh.md"
-    And I create a commit with the message "fix2: commit that fixes something"
+  Scenario: Valid Commits
+    Given I commit the next changes
+      | fix: commit that fixes something in the lambdas | src/lambda1/lambda1.py |
     And I push my branch
-    When I create a PR with title "invalid-commit: wrong commit type"
-    Then the workflow "Test conventional-commits-validator" must conclude in "failure"
+    When I create a PR with title "test: label PR with commit types"
+    Then the workflow "Test conventional-commits-validator" must conclude in "success"
+    And The PR must include the labels
+      | fix |
+      | ci  |
     And I close the PR

@@ -1,6 +1,6 @@
-Feature: Validate Commit types using default configuration
+Feature: Calculate next release when docs are updated
 
-  Background: The gh action is configured with the default configuration
+  Background: The gh action runs with the default configuration
     Given I checkout a branch from main
     And I create the ".github/workflows/cc-test.yml" file with the next content:
       """
@@ -20,17 +20,19 @@ Feature: Validate Commit types using default configuration
       
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
+              with:
+                calculate-next-release: true
       """
     And I stage the file ".github/workflows/cc-test.yml"
     And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
     Given I commit the next changes
-      | ci: commit that fixes something in terraform    | terraform/main.tf      |
-      | fix: commit that fixes something in the lambdas | src/lambda1/lambda1.py |
-      | feat: commit that adds a feature in terraform   | terraform/main.tf      |
-      | break: commit that introduce a breaking change  | docs/notes.md          |
+      | docs: updated readme | refresh.md |
     And I push my branch
-    When I create a PR with title "valid-commit: supported types"
+    When I create a PR with title "feat: Calculate next release when docs are updated"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
+    And the workflow must show "1" annotations
+    And The next annotations must be listed
+      | notice | Changes will not generate a new release | commit messages don't include any change that trigger a release |
     And I close the PR

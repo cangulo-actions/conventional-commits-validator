@@ -1,6 +1,6 @@
 Feature: Validate scopes using custom configuration
 
-  Background: The gh action is configured with the custom configuration
+  Background: The gh action runs with custom configurationuration
     Given I checkout a branch from main
     And I create the "commits-config-test.yml" file with the next content:
       """
@@ -44,6 +44,6 @@ Feature: Validate scopes using custom configuration
       | feat(tfm): commit that adds a feature in terraform   | terraform/main.tf      |
       | break: commit that introduce a breaking change       | docs/notes.md          |
     And I push my branch
-    When I create a PR with title "valid-commit-scopes: modifications match configuration"
+    When I create a PR with title "valid-commits: modifications match configuration"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
     And I close the PR

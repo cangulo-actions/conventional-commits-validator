@@ -51,36 +51,21 @@ Cypress.Commands.add('closePR', (number) => {
     })
 })
 
-Cypress.Commands.add('closeAnyPendingPR', () => {
+Cypress.Commands.add('getPR', (number) => {
   const ghAPIUrl = Cypress.env('GH_API_URL')
-  const branch = Cypress.env('BRANCH_TO_CREATE')
-  const pullsUrl = `${ghAPIUrl}/pulls`
+  const pullsUrl = `${ghAPIUrl}/pulls/${number}`
 
   return cy
     .request(
       {
         method: 'GET',
-        url: `${pullsUrl}?state=open&head=cangulo-actions:${branch}`,
+        url: pullsUrl,
         headers: {
           Authorization: `token ${Cypress.env('GH_TOKEN')}`
         }
       }
     )
     .then((response) => {
-      const prNumbers = response.body.map((pr) => pr.number)
-      for (const prNumber of prNumbers) {
-        cy.request(
-          {
-            method: 'PATCH',
-            url: `${pullsUrl}/${prNumber}`,
-            headers: {
-              Authorization: `token ${Cypress.env('GH_TOKEN')}`
-            },
-            body: {
-              state: 'closed'
-            }
-          }
-        )
-      }
+      return response.body
     })
 })

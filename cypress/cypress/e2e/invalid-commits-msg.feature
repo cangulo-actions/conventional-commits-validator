@@ -1,6 +1,6 @@
 Feature: Reject non conventional commits
 
-  Background: The gh action is configured with the default settings
+  Background: The gh action runs with the default configuration
     Given I checkout a branch from main
     And I create the ".github/workflows/cc-test.yml" file with the next content:
       """
@@ -28,6 +28,6 @@ Feature: Reject non conventional commits
     Given I modify and stage the file: "refresh.md"
     And I create a commit with the message "wrong commit message"
     And I push my branch
-    When I create a PR with title "invalid-commit: wrong commit message, does not follow convention"
+    When I create a PR with title "invalid-commits: wrong commit message, does not follow convention"
     Then the workflow "Test conventional-commits-validator" must conclude in "failure"
     And I close the PR

@@ -108,24 +108,48 @@ jobs:
             branch-to-create: smoke
 
           - scenario: Invalid Commit Type
-            spec: cypress/e2e/invalid-commit-type.feature
-            branch-to-create: invalid-commit-type
+            spec: cypress/e2e/invalid-commits-type.feature
+            branch-to-create: invalid-commits-type
 
           - scenario: Invalid Commit Msg
-            spec: cypress/e2e/invalid-commit-msg.feature
-            branch-to-create: invalid-commit-msg
+            spec: cypress/e2e/invalid-commits-msg.feature
+            branch-to-create: invalid-commits-msg
 
           - scenario: Invalid scope
-            spec: cypress/e2e/invalid-commit-scope.feature
-            branch-to-create: invalid-commit-scope
+            spec: cypress/e2e/invalid-commits-scope.feature
+            branch-to-create: invalid-commits-scope
+
+          - scenario: Invalid configuration
+            spec: cypress/e2e/invalid-configuration.feature
+            branch-to-create: invalid-configuration
 
           - scenario: Valid Commit Types
-            spec: cypress/e2e/valid-commit-types.feature
-            branch-to-create: valid-commit-types
+            spec: cypress/e2e/valid-commits-types.feature
+            branch-to-create: valid-commits-types
 
           - scenario: Valid Scopes
-            spec: cypress/e2e/valid-commit-scopes.feature
-            branch-to-create: valid-commit-scopes
+            spec: cypress/e2e/valid-commits-scopes.feature
+            branch-to-create: valid-commits-scopes
+
+          - scenario: Feat - Calculate next release when docs are updated
+            spec: cypress/e2e/feat-calculate-next-release-docs.feature
+            branch-to-create: feat-calc-next-release-docs
+
+          - scenario: Feat - Calculate next release when breaking changes are introduced
+            spec: cypress/e2e/feat-calculate-next-release-break.feature
+            branch-to-create: feat-calc-next-release-break
+
+          - scenario: Feat - Label PR with the next release
+            spec: cypress/e2e/feat-label-pr-with-release-type.feature
+            branch-to-create: feat-label-pr-with-release-type
+
+          - scenario: Feat - Label PR with commit types
+            spec: cypress/e2e/feat-label-pr-with-commit-types.feature
+            branch-to-create: feat-label-pr-with-commit-types
+
+          - scenario: Feat - Label PR with commit scopes
+            spec: cypress/e2e/feat-label-pr-with-scopes.feature
+            branch-to-create: feat-label-pr-with-scopes
 
     env:
       CYPRESS_GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
