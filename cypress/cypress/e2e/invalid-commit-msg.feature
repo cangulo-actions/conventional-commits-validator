@@ -1,4 +1,4 @@
-Feature: Smoke tests
+Feature: Reject non conventional commits
 
   Background: The gh action is configured with the default settings
     Given I checkout a branch from main
@@ -9,7 +9,7 @@ Feature: Smoke tests
         pull_request: 
           branches:
             - main
-
+      
       jobs:
         validate-commits:
           name: Validate Commits
@@ -17,16 +17,17 @@ Feature: Smoke tests
           steps:
             - name: checkout
               uses: actions/checkout@v4
-
+      
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
       """
     And I stage the file ".github/workflows/cc-test.yml"
     And I create a commit with the message "ci: added cc-test.yml"
-    And I push my branch
 
-  @smoke
-  Scenario: I create a PR with one commit fixing something
-    When I create a PR with title "cc smoke test"
-    Then the workflow "Test conventional-commits-validator" must conclude in "success"
+  Scenario: unconventional commit message
+    Given I modify and stage the file: "refresh.md"
+    And I create a commit with the message "wrong commit message"
+    And I push my branch
+    When I create a PR with title "invalid-commit: wrong commit message, does not follow convention"
+    Then the workflow "Test conventional-commits-validator" must conclude in "failure"
     And I close the PR

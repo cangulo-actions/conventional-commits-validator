@@ -14,7 +14,7 @@ jobs:
     name: 🔎 Get Changes
     runs-on: ubuntu-latest
     outputs:
-      js-modified: ${{ steps.changes.outputs.js || steps.changes.outputs.tests }}
+      js-modified: ${{ steps.changes.outputs.js == 'true' || steps.changes.outputs.tests == 'true' }}
       action-modified: ${{ steps.changes.outputs.action }}
     steps:
       - name: Checkout
