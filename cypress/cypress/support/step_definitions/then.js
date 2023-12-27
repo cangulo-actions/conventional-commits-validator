@@ -1,34 +1,46 @@
 const { Then } = require('@badeball/cypress-cucumber-preprocessor')
 
-Then('the CI workflow triggered must conclude in {string}', (result) => {
+Then('the workflow {string} must conclude in {string}', (workflowName, conclusion) => {
   const waitTimeCI = Cypress.env('WAIT_TIME_CI_WORKFLOW')
   const retryInterval = Cypress.env('API_RETRY_INTERVAL_MS')
   const maxTimeout = Cypress.env('API_RETRY_TIMEOUT_MS')
-  const checkName = 'test cangulo-actions/conventional-commits-validator' // must match the job name in the ci.yml workflow
+  const branch = Cypress.env('BRANCH_TO_CREATE')
+  const event = 'pull_request'
   const status = 'completed'
 
   cy
     .task('getSharedDataByKey', 'PR_HEAD_SHA')
     .then((prHeadSHA) => {
+      const headSha = prHeadSHA
       cy
         .wait(waitTimeCI)
         .waitUntil(() => {
           return cy
-            .getCommitCheckRuns({ commitId: prHeadSHA, checkName, status })
-            .then((checkRuns) => checkRuns.length === 1)
-        }, { interval: retryInterval, timeout: maxTimeout, errorMsg: 'The CI workflow did not finish in time.' })
+            .getRuns({ branch, event, headSha, status })
+            .then((runs) => {
+              return runs.workflow_runs.find((run) => run.name === workflowName) !== undefined
+            })
+        }, {
+          interval: retryInterval,
+          timeout: maxTimeout,
+          errorMsg: `The ${workflowName} workflow did not finish in time.`
+        })
         .then(() => {
           cy
-            .getCommitCheckRuns({ commitId: prHeadSHA, checkName, status })
-            .then((checkRuns) => {
-              expect(checkRuns[0].conclusion).to.equal(result, `the CI workflow must result in ${result}`)
-              cy
-                .task('getSharedDataByKey', 'PR_NUMBER')
-                .then((prNumber) => {
-                  cy
-                    .closePR(prNumber)
-                })
+            .getRuns({ branch, event, headSha, status })
+            .then((runs) => {
+              const commitValidationRun = runs.workflow_runs.find((run) => run.name === workflowName)
+              expect(commitValidationRun.conclusion).to.equal(conclusion, `the CI workflow must result in ${conclusion}`)
             })
         })
+    })
+})
+
+Then('I close the PR', () => {
+  cy
+    .task('getSharedDataByKey', 'PR_NUMBER')
+    .then((prNumber) => {
+      cy
+        .closePR(prNumber)
     })
 })

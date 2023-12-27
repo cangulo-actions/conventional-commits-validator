@@ -17,7 +17,7 @@ inputs:
     description: >
       flag for adding each commit type as a label to the PR.
       Format: '<commit-type>'
-      Commit Types: defined in the ./config.default.yml or in the inputs.configuration file
+      Commit Types: defined in 'commits.default' at ./config.schema.yml or in the inputs.configuration file
       Example: 'fix,docs'
     required: false
     default: 'false'
@@ -69,7 +69,6 @@ runs:
       id: config
       env:
         INPUT_CONFIG: ${{ inputs.configuration }}
-        DEFAULT_CONFIG : ${{ github.action_path }}/config.default.yml
         NODE_MODULES_PATH: ${{ github.action_path }}/node_modules
         SCHEMA: ${{ github.action_path }}/config.schema.yml
       with:
@@ -80,12 +79,15 @@ runs:
 
           const schemaPath    = process.env.SCHEMA
           const inputConfig   = process.env.INPUT_CONFIG
-          const configPath    = inputConfig !== '' ? inputConfig : process.env.DEFAULT_CONFIG;
-
           const schemaContent = fs.readFileSync(schemaPath)
-          const configContent = fs.readFileSync(configPath)
           const schema        = yml.load(schemaContent)
-          const config        = yml.load(configContent)
+          let   config        = {}
+
+          if(inputConfig !== '') {
+            const configPath    = inputConfig
+            const configContent = fs.readFileSync(configPath)
+            config              = yml.load(configContent)
+          }
 
           const ajv       = new Ajv({ useDefaults: true })  // add default values to the config properties
           const validate  = ajv.compile(schema)
@@ -315,3 +317,5 @@ runs:
               .addRaw("changes won't trigger a new release")
               .write()
           }
+
+# refresh 20231226-1

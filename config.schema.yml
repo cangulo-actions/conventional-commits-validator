@@ -4,14 +4,32 @@ properties:
     type: array
     description: |
       The list of commit types and their corresponding release types.
-    minItems: 1
+    default:
+    - type: break
+      release: major
+    - type: feat
+      release: minor
+    - type: fix
+      release: patch
+    - type: revert
+      release: patch
+    - type: refactor
+      release: none      
+    - type: chore
+      release: none
+    - type: test
+      release: none
+    - type: docs
+      release: none
+    - type: ci
+      release: none
     uniqueItems: true
     items:
       type: object
       properties:
         type:
           type: string
-          examples: [break, feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]
+          examples: [break, feat, fix, revert, refactor, chore, test, docs, ci]
         release:
           type: string
           enum: [major, minor, patch, none]
