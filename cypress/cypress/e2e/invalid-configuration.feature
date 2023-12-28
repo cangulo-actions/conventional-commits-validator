@@ -1,16 +1,15 @@
-Feature: Validate scopes using custom configuration
+Feature: Fail when invalid configuration is provided
 
-  Background: The gh action is configured with the custom configuration
+  Background: The gh action runs with custom configuration
     Given I checkout a branch from main
     And I create the "commits-config-test.yml" file with the next content:
       """
+      commits:
+        - type: ci  # miss the release type
+
       scopes:
-        - key: tfm
-          files:
-            - "terraform/**"
-        - key: src
-          files:
-            - "src/**"
+        - tfm       # miss scope properties {key,files}
+        - src
       """
     And I stage the file "commits-config-test.yml"
     And I create the ".github/workflows/cc-test.yml" file with the next content:
@@ -37,13 +36,8 @@ Feature: Validate scopes using custom configuration
     And I stage the file ".github/workflows/cc-test.yml"
     And I create a commit with the message "ci: added cc-test.yml with custom config"
 
-  Scenario: Commits with valid scopes
-    Given I commit the next changes
-      | ci(tfm): commit that fixes something in terraform    | terraform/main.tf      |
-      | fix(src): commit that fixes something in the lambdas | src/lambda1/lambda1.py |
-      | feat(tfm): commit that adds a feature in terraform   | terraform/main.tf      |
-      | break: commit that introduce a breaking change       | docs/notes.md          |
-    And I push my branch
-    When I create a PR with title "valid-scopes: modifications match configuration"
-    Then the workflow "Test conventional-commits-validator" must conclude in "success"
+  Scenario: commits with invalid scope
+    Given I push my branch
+    When I create a PR with title "invalid-configuration: configuration miss a commit release type"
+    Then the workflow "Test conventional-commits-validator" must conclude in "failure"
     And I close the PR

@@ -1,13 +1,9 @@
-Feature: Reject commits with invalid scopes
+Feature: Validate scopes using custom configuration
 
-  Background: The gh action is configured with the custom config
+  Background: The gh action runs with custom configurationuration
     Given I checkout a branch from main
     And I create the "commits-config-test.yml" file with the next content:
       """
-      commits:
-        - type: ci
-          release: none
-
       scopes:
         - key: tfm
           files:
@@ -41,10 +37,13 @@ Feature: Reject commits with invalid scopes
     And I stage the file ".github/workflows/cc-test.yml"
     And I create a commit with the message "ci: added cc-test.yml with custom config"
 
-  Scenario: commits with invalid scope
-    Given I modify and stage the file: "src/lambda1/lambda1.py"
-    And I create a commit with the message "ci(tfm): updated lambda code"
+  Scenario: Commits with valid scopes
+    Given I commit the next changes
+      | ci(tfm): commit that fixes something in terraform    | terraform/main.tf      |
+      | fix(src): commit that fixes something in the lambdas | src/lambda1/lambda1.py |
+      | feat(tfm): commit that adds a feature in terraform   | terraform/main.tf      |
+      | break: commit that introduce a breaking change       | docs/notes.md          |
     And I push my branch
-    When I create a PR with title "invalid-commit: wrong scope"
-    Then the workflow "Test conventional-commits-validator" must conclude in "failure"
+    When I create a PR with title "valid-commits: modifications match configuration"
+    Then the workflow "Test conventional-commits-validator" must conclude in "success"
     And I close the PR

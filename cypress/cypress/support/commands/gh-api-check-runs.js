@@ -1,6 +1,6 @@
-Cypress.Commands.add('getCommitCheckRuns', (commitId) => {
+Cypress.Commands.add('getCheckRunAnnotations', (checkRunId) => {
   const ghAPIUrl = Cypress.env('GH_API_URL')
-  const getCommitCheckRunsUrl = `${ghAPIUrl}/commits/${commitId}/check-runs`
+  const getCommitCheckRunsUrl = `${ghAPIUrl}/check-runs/${checkRunId}/annotations`
 
   return cy
     .request(
@@ -13,6 +13,6 @@ Cypress.Commands.add('getCommitCheckRuns', (commitId) => {
       }
     )
     .then((response) => {
-      return response.body.check_runs
+      return response.body
     })
 })

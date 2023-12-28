@@ -59,9 +59,7 @@ properties:
               type: string
               description: |
                 JSON file where the version is stored
-            changelog:
-              type: string
-              description: |
-                markdown file where the changelog is stored
-required:
-  - commits
+          required:
+            - file
+      required:
+        - key

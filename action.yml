@@ -5,7 +5,12 @@ inputs:
     description: 'path to the YML configuration'
     required: false
     default: ''
-  add-next-release-type-as-label-to-pr:
+  calculate-next-release:
+    description: >
+      flag for calculating the next release. It will be printed in the summary.
+    required: false
+    default: 'false'
+  label-pr-with-release-type:
     description: >
       flag for adding the release type as a label to the PR.
       Format: 'release-type:<value>'
@@ -13,7 +18,7 @@ inputs:
       Example: 'release-type:major'
     required: false
     default: 'false'
-  add-commit-types-as-labels-to-pr:
+  label-pr-with-commit-types:
     description: >
       flag for adding each commit type as a label to the PR.
       Format: '<commit-type>'
@@ -21,27 +26,23 @@ inputs:
       Example: 'fix,docs'
     required: false
     default: 'false'
-  add-commit-scopes-as-labels-to-pr:
+  label-pr-with-commit-scopes:
     description: flag for adding all scopes as labels to the PR.
     required: false
     default: 'false'
-  print-summary:
-    description: 'flag for printing the release details to the GITHUB_STEP_SUMMARY'
-    required: true
-    default: 'true'
 
 outputs:
   new-release-triggered:
-    value: ${{ steps.validate-commits.outputs.next-release-triggered }}
+    value: ${{ steps.calculate-next-release.outputs.next-release-triggered }}
     description: 'flag to detect if the PR changes will trigger a new release'
   next-version:
-    value: ${{ steps.validate-commits.outputs.next-version }}
+    value: ${{ steps.calculate-next-release.outputs.next-version }}
     description: 'version to be released when the PR is merged'
   next-release-type:
-    value: ${{ steps.validate-commits.outputs.next-release-type }}
+    value: ${{ steps.calculate-next-release.outputs.next-release-type }}
     description: 'next release type: major, minor or patch'
   changes:
-    value: ${{ steps.validate-commits.outputs.changes }}
+    value: ${{ steps.calculate-next-release.outputs.changes }}
     description: 'commits parsed into model: [{type, releaseAssociated, scopes, description, originalCommit}]'
   scopes:
     value: ${{ steps.semver.outputs.scopes }}
@@ -211,7 +212,8 @@ runs:
 
     - name: Calculate next release
       uses: actions/github-script@v7
-      id: validate-commits
+      if: ${{ inputs.calculate-next-release == 'true' }}
+      id: calculate-next-release
       env:
         CONFIG: ${{ steps.config.outputs.config }}
         CHANGES: ${{ steps.list-changes.outputs.changes }}
@@ -227,6 +229,15 @@ runs:
           console.log('next release:', JSON.stringify(result, null, 2))
           core.endGroup()
 
+          if (result.releaseRequired) {
+            core.notice(`${result.version} - ${result.releaseType} release`, { title: 'Next Release' })
+            if(result.releaseType === 'major') {
+              core.warning('Please check them carefully 🔎', { title: 'Changes will generate a major release' })
+            }
+          } else {
+            core.notice(`commit messages don't include any change that trigger a release`, { title: 'Changes will not generate a new release' })
+          }
+
           core.setOutput('next-release-triggered', result.releaseRequired)
           core.setOutput('next-version', result.version)
           core.setOutput('next-release-type', result.releaseType)
@@ -234,20 +245,22 @@ runs:
 
     - name: add labels to the PR
       if: >
-        inputs.add-next-release-type-as-label-to-pr == 'true' || 
-        inputs.add-commit-types-as-labels-to-pr     == 'true' ||
-        inputs.add-commit-scopes-as-labels-to-pr    == 'true'
+        inputs.label-pr-with-commit-scopes    == 'true' ||
+        inputs.label-pr-with-commit-types     == 'true' ||
+        (
+          inputs.calculate-next-release               == 'true' && 
+          inputs.label-pr-with-release-type == 'true' 
+        )
       uses: actions/github-script@v7
       env:
-        RELEASE_TRIGGERED: ${{ steps.validate-commits.outputs.next-release-triggered }}
-        NEXT_RELEASE_TYPE: ${{ steps.validate-commits.outputs.next-release-type }}
+        ADD_SCOPES_AS_LABELS: ${{ inputs.label-pr-with-commit-scopes }}
+        ADD_COMMIT_TYPES_AS_LABELS: ${{ inputs.label-pr-with-commit-types }}
+        ADD_RELEASE_TYPE_AS_LABEL: ${{ inputs.calculate-next-release && inputs.label-pr-with-release-type }}
+        RELEASE_TRIGGERED: ${{ steps.calculate-next-release.outputs.next-release-triggered }}
+        NEXT_RELEASE_TYPE: ${{ steps.calculate-next-release.outputs.next-release-type }}
         CHANGES: ${{ steps.list-changes.outputs.changes }}
-        ADD_RELEASE_TYPE_AS_LABEL: ${{ inputs.add-next-release-type-as-label-to-pr }}
-        ADD_COMMIT_TYPES_AS_LABELS: ${{ inputs.add-commit-types-as-labels-to-pr }}
-        ADD_SCOPES_AS_LABELS: ${{ inputs.add-commit-scopes-as-labels-to-pr }}
       with:
         script: |
-          const releaseTriggered  = process.env.RELEASE_TRIGGERED === 'true'
           const changes           = JSON.parse(process.env.CHANGES)
           const addReleaseType    = process.env.ADD_RELEASE_TYPE_AS_LABEL   === 'true'
           const addCommitTypes    = process.env.ADD_COMMIT_TYPES_AS_LABELS  === 'true'
@@ -256,8 +269,9 @@ runs:
           labels = []
 
           if(addReleaseType) {
+            const releaseTriggered  = process.env.RELEASE_TRIGGERED === 'true'
             const nextReleaseType   = releaseTriggered ? process.env.NEXT_RELEASE_TYPE : 'no'
-            const label = `${nextReleaseType}-release`
+            const label             = `${nextReleaseType}-release`
             labels.push(label)
           }
 
@@ -285,37 +299,5 @@ runs:
             issue_number: context.payload.pull_request.number,
             labels: labels
               })
-
-    - name: printing summary
-      if: ${{ inputs.print-summary == 'true' }}
-      uses: actions/github-script@v7
-      env:
-        RELEASE_TRIGGERED: ${{ steps.validate-commits.outputs.next-release-triggered }}
-        NEXT_RELEASE_TYPE: ${{ steps.validate-commits.outputs.next-release-type }}
-        NEXT_VERSION: ${{ steps.validate-commits.outputs.next-version }}
-      with:
-        script: |
-          const releaseTriggered = process.env.RELEASE_TRIGGERED === 'true'
-
-          if (releaseTriggered) {
-            const nextVersion     = process.env.NEXT_VERSION
-            const nextReleaseType = process.env.NEXT_RELEASE_TYPE
-
-            core.summary
-              .addHeading('📽️ Next release')
-              .addTable([
-                [{ data: 'version', header: true }, { data: 'type', header: true }],
-                [nextVersion, nextReleaseType]
-              ])
-              .write()
-
-            if(nextReleaseType === 'major') {
-              core.warning('⚠️ This is a major release, please check the changes carefully')
-            }
-          } else {
-            core.summary
-              .addRaw("changes won't trigger a new release")
-              .write()
-          }
 
 # refresh 20231226-1

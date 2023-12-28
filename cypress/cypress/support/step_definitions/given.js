@@ -40,16 +40,27 @@ Given('I push my branch', () => {
 })
 
 Given('I commit the next changes', (table) => {
-  table
-    .rows()
-    .forEach(row => {
-      const commitMsg = row[0]
-      const file = row[1]
-      const currentTime = new Date().toISOString()
-      const content = `# refresh ${currentTime}`
-      cy
-        .writeFile(file, content)
-        .exec(`git add "${file}"`)
-        .exec(`git commit -m "${commitMsg}"`)
-    })
+  if (table.raw().length === 1) {
+    const row = table.raw()[0]
+    const commitMsg = row[0]
+    const file = row[1]
+    updateFile(file, commitMsg)
+  } else {
+    table
+      .rows()
+      .forEach(row => {
+        const commitMsg = row[0]
+        const file = row[1]
+        updateFile(file, commitMsg)
+      })
+  }
 })
+
+function updateFile (file, commitMsg) {
+  const currentTime = new Date().toISOString()
+  const content = `# refresh ${currentTime}`
+  cy
+    .writeFile(file, content)
+    .exec(`git add "${file}"`)
+    .exec(`git commit -m "${commitMsg}"`)
+}
