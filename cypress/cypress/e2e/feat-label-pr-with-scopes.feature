@@ -27,11 +27,11 @@ Feature: Label PR with commit scopes
     And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
-    Given I commit the next changes
-      | ci(tfm): commit that fixes something in terraform    | terraform/main.tf      |
-      | fix(src): commit that fixes something in the lambdas | src/lambda1/lambda1.py |
-      | feat(tfm): commit that adds a feature in terraform   | terraform/main.tf      |
-      | break: commit that introduce a breaking change       | docs/notes.md          |
+    Given I modify the next files and commit each change with the message
+      | terraform/main.tf      | ci(tfm): commit that fixes something in terraform    |
+      | src/lambda1/lambda1.py | fix(src): commit that fixes something in the lambdas |
+      | terraform/main.tf      | feat(tfm): commit that adds a feature in terraform   |
+      | docs/notes.md          | break: commit that introduce a breaking change       |
     And I push my branch
     When I create a PR with title "test: label PR with commit scopes"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"

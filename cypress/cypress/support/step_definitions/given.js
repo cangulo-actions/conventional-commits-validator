@@ -39,21 +39,18 @@ Given('I push my branch', () => {
   cy.exec(`git push origin ${branch} --force`)
 })
 
-Given('I commit the next changes', (table) => {
-  if (table.raw().length === 1) {
-    const row = table.raw()[0]
-    const commitMsg = row[0]
-    const file = row[1]
-    updateFile(file, commitMsg)
-  } else {
-    table
-      .rows()
-      .forEach(row => {
-        const commitMsg = row[0]
-        const file = row[1]
-        updateFile(file, commitMsg)
-      })
-  }
+Given('I modify the file {string} and commit it with the message {string}', (file, msg) => {
+  updateFile(file, msg)
+})
+
+Given('I modify the next files and commit each change with the message', (table) => {
+  table
+    .rows()
+    .forEach(row => {
+      const file = row[0]
+      const commitMsg = row[1]
+      updateFile(file, commitMsg)
+    })
 })
 
 function updateFile (file, commitMsg) {
