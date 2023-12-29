@@ -26,6 +26,7 @@ Feature: Validate Commit types using default configuration
 
   Scenario: Valid Commits
     Given I modify the next files and commit each change with the message
+      | <file>                 | <commig message>                                |
       | terraform/main.tf      | ci: commit that fixes something in terraform    |
       | src/lambda1/lambda1.py | fix: commit that fixes something in the lambdas |
       | terraform/main.tf      | feat: commit that adds a feature in terraform   |

@@ -39,6 +39,7 @@ Feature: Validate scopes using custom configuration
 
   Scenario: Commits with valid scopes
     Given I modify the next files and commit each change with the message
+      | <file>                 | <commig message>                                     |
       | terraform/main.tf      | ci(tfm): commit that fixes something in terraform    |
       | src/lambda1/lambda1.py | fix(src): commit that fixes something in the lambdas |
       | terraform/main.tf      | feat(tfm): commit that adds a feature in terraform   |

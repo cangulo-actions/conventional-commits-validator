@@ -28,6 +28,7 @@ Feature: Calculate next release when breaking changes are introduced
 
   Scenario: Valid Commits
     Given I modify the next files and commit each change with the message
+      | <file>                 | <commig message>                                |
       | terraform/main.tf      | ci: commit that fixes something in terraform    |
       | src/lambda1/lambda1.py | fix: commit that fixes something in the lambdas |
       | terraform/main.tf      | feat: commit that adds a feature in terraform   |
@@ -37,6 +38,7 @@ Feature: Calculate next release when breaking changes are introduced
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
     And the workflow must show "2" annotations
     And The next annotations must be listed
+      | <level> | <title>                               | <message >                  |
       | notice  | Next Release                          | major release               |
       | warning | Changes will generate a major release | Please check them carefully |
     And I close the PR
