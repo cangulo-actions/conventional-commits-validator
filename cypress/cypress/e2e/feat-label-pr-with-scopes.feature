@@ -28,6 +28,7 @@ Feature: Label PR with commit scopes
 
   Scenario: Valid Commits
     Given I modify the next files and commit each change with the message
+      | <file>                 | <commig message>                                     |
       | terraform/main.tf      | ci(tfm): commit that fixes something in terraform    |
       | src/lambda1/lambda1.py | fix(src): commit that fixes something in the lambdas |
       | terraform/main.tf      | feat(tfm): commit that adds a feature in terraform   |
@@ -36,6 +37,7 @@ Feature: Label PR with commit scopes
     When I create a PR with title "test: label PR with commit scopes"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
     And The PR must include the labels
-      | tfm |
-      | src |
+      | <label> |
+      | tfm     |
+      | src     |
     And I close the PR
