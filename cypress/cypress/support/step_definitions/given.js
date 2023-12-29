@@ -39,8 +39,8 @@ Given('I push my branch', () => {
   cy.exec(`git push origin ${branch} --force`)
 })
 
-Given('I modify the file {string} and commit it with the message {string}', (file, msg) => {
-  updateFile(file, msg)
+Given('I modify the file {string}', (file) => {
+  updateFile(file)
 })
 
 Given('I modify the next files and commit each change with the message', (table) => {
@@ -49,15 +49,15 @@ Given('I modify the next files and commit each change with the message', (table)
     .forEach(row => {
       const file = row[0]
       const commitMsg = row[1]
-      updateFile(file, commitMsg)
+      updateFile(file)
+      cy.exec(`git commit -m "${commitMsg}"`)
     })
 })
 
-function updateFile (file, commitMsg) {
+function updateFile (file) {
   const currentTime = new Date().toISOString()
   const content = `# refresh ${currentTime}`
   cy
     .writeFile(file, content)
     .exec(`git add "${file}"`)
-    .exec(`git commit -m "${commitMsg}"`)
 }

@@ -27,7 +27,9 @@ Feature: Label PR with commit types
     And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
-    Given I modify the file "src/lambda1/lambda1.py" and commit it with the message "fix: commit that fixes something in the lambdas"
+    Given I modify the file "src/lambda1/lambda1.py"
+    And I stage the file "src/lambda1/lambda1.py" 
+    And I create a commit with the message "fix: commit that fixes something in the lambdas"
     And I push my branch
     When I create a PR with title "test: label PR with commit types"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
