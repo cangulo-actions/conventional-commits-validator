@@ -9,7 +9,8 @@ When('I create a PR with title {string}', (title) => {
     .createPR({ title, description, branch })
     .then((pr) => {
       console.log(`PR created: ${pr.number}`)
-      cy.task('appendSharedData', `PR_NUMBER=${pr.number}`)
-      cy.task('appendSharedData', `PR_HEAD_SHA=${pr.headSha}`)
+      cy
+        .task('appendSharedData', `PR_NUMBER=${pr.number}`)
+        .task('appendSharedData', `PR_HEAD_SHA=${pr.headSha}`)
     })
 })
