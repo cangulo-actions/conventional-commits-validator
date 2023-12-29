@@ -184,7 +184,7 @@ jobs:
           rm -rf cypress                        # remove any local cypress folder
           mv cypress-cc/* . --force --verbose   # move cypress from artifact to root
 
-      - name: 🧪 e2e tests
+      - name: 🧪 run cypress e2e tests
         uses: cypress-io/github-action@v6.6.0
         with:
           spec: ${{ matrix.spec }}
