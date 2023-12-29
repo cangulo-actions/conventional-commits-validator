@@ -34,7 +34,6 @@ Feature: Label PR with release type
     When I create a PR with title "test: label PR with release type"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
     And the workflow must show "1" annotations
-    And The next annotations must be listed
-      | notice | Next Release | patch release |
+    And this annotation is of type "notice", has title "Next Release" and its message includes "patch release"
     And The PR must include the label "patch-release"
     And I close the PR
