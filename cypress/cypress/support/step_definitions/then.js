@@ -30,7 +30,7 @@ Then('the workflow {string} must conclude in {string}', (workflowName, conclusio
             .getRuns({ branch, event, headSha, status })
             .then((runs) => {
               const commitValidationRun = runs.workflow_runs.find((run) => run.name === workflowName)
-              expect(commitValidationRun.conclusion).to.equal(conclusion, `the CI workflow must result in ${conclusion}`)
+              expect(commitValidationRun.conclusion).to.equal(conclusion, `the ${workflowName} workflow must result in ${conclusion}`)
             })
         })
     })
