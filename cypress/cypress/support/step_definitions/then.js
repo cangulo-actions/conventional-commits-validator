@@ -78,28 +78,28 @@ Then('the workflow must show {string} annotations', (numberOfAnnotations) => {
     })
 })
 
+Then('this annotation is of type {string}, has title {string} and its message includes {string}', (level, title, partialMsg) => {
+  cy
+    .task('getSharedDataByKey', 'ANNOTATIONS')
+    .then((annotationsJSON) => {
+      const annotations = JSON.parse(annotationsJSON)
+      ensureValidationExists(annotations, level, title, partialMsg)
+    })
+})
+
 Then('The next annotations must be listed', (table) => {
   cy
     .task('getSharedDataByKey', 'ANNOTATIONS')
     .then((annotationsJSON) => {
       const annotations = JSON.parse(annotationsJSON)
-      const rows = table.raw()
-      const rowCount = rows.length
-
-      if (rowCount === 1) {
-        const row = rows[0]
-        const level = row[0]
-        const title = row[1]
-        const partialMsg = row[2]
-        ensureValidationExists(annotations, level, title, partialMsg)
-      } else {
-        rows.forEach(row => {
+      table
+        .rows()
+        .forEach(row => {
           const level = row[0]
           const title = row[1]
           const partialMsg = row[2]
           ensureValidationExists(annotations, level, title, partialMsg)
         })
-      }
     })
 })
 

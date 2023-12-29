@@ -33,6 +33,5 @@ Feature: Calculate next release when docs are updated
     When I create a PR with title "feat: Calculate next release when docs are updated"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
     And the workflow must show "1" annotations
-    And The next annotations must be listed
-      | notice | Changes will not generate a new release | commit messages don't include any change that trigger a release |
+    And this annotation is of type "notice", has title "Changes will not generate a new release" and its message includes "commit messages don't include any change that trigger a release"
     And I close the PR
