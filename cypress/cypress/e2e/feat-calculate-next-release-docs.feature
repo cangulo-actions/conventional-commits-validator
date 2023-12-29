@@ -27,8 +27,7 @@ Feature: Calculate next release when docs are updated
     And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
-    Given I commit the next changes
-      | docs: updated readme | refresh.md |
+    Given I modify the file "refresh.md" and commit it with the message "docs: updated readme"
     And I push my branch
     When I create a PR with title "feat: Calculate next release when docs are updated"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"

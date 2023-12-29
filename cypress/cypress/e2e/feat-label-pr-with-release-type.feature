@@ -28,8 +28,7 @@ Feature: Label PR with release type
     And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
-    Given I commit the next changes
-      | fix: commit that fixes something in the lambdas | src/lambda1/lambda1.py |
+    Given I modify the file "src/lambda1/lambda1.py" and commit it with the message "fix: commit that fixes something in the lambdas"
     And I push my branch
     When I create a PR with title "test: label PR with release type"
     Then the workflow "Test conventional-commits-validator" must conclude in "success"
