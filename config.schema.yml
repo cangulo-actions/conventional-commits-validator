@@ -63,3 +63,6 @@ properties:
             - file
       required:
         - key
+
+required:
+  - commits
