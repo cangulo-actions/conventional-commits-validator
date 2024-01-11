@@ -33,4 +33,4 @@ Feature: Calculate next release when docs are updated
     Then the workflow "cangulo-actions/conventional-commits-validator test" must conclude in "success"
     And the next annotations must be listed:
       | <level> | <title>                                 | <partial-message>                                               |
-      | notice  | Changes will not generate a new release | commit messages don't include any change that trigger a release |
+      | notice  | Changes will not generate a new release | commits won't trigger a new release |
