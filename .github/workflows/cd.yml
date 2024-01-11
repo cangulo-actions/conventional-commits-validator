@@ -14,6 +14,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4.1.1
+      with:
+        token: ${{ secrets.GH_AUTOMATION_TOKEN }} # required for pushing to main, it is a protected branch
 
     - name: release new version
       uses: cangulo-actions/semver@main
@@ -36,4 +38,4 @@ jobs:
           core.summary
             .addHeading('Semver Output:')
             .addCodeBlock(JSON.stringify(semverOutputs, null, 2), 'json')
-            .write()      
+            .write()
