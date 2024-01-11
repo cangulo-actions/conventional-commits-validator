@@ -1,3 +1,8 @@
+# 0.3.2 fix: added GH token to cd workflow for pushing to main (#36)
+
+## patches:
+* fix: added GH token to cd workflow for pushing to main (#36)
+
 # 0.3.1 fix: #9 fixed input name (#21)
 
 ## patches:
