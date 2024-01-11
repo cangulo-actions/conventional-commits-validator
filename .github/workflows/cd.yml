@@ -8,34 +8,34 @@ on:
 jobs:
   semver:
     name: 🚀 release new version
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4.1.1
       with:
           token: ${{ secrets.GH_AUTOMATION_TOKEN }}
+
     - name: release new version
       uses: cangulo-actions/semver@main
       id: semver
       with:
         create-gh-release: true
         print-summary: true
-    - name: print semver output
-      if: ${{ steps.semver.outputs.version != '' }}
+        print-annotations: true
+
+    - name: add semver output to GH summary
+      uses: actions/github-script@v7
       env:
-        CHANGES: ${{ steps.semver.outputs.changes }}
-        CHANGELOG_RECORD: ${{ steps.semver.outputs.changelog-record }}
-        SCOPES: ${{ steps.semver.outputs.scopes }}
-      run: |
-        echo "version:        ${{ steps.semver.outputs.version }}"
-        echo "release-title:  ${{ steps.semver.outputs.release-title }}"
-        echo "release-type:   ${{ steps.semver.outputs.release-type }}"
+        SEMVER_OUTPUTS: ${{ toJson(steps.semver.outputs) }}
+      with:
+        script: |
+          const semverOutputs = JSON.parse(process.env.SEMVER_OUTPUTS)
 
-        echo "changes:"
-        echo "$CHANGES" | jq .
+          console.log('semverOutputs', semverOutputs)
 
-        echo "changes-log:"
-        echo "$CHANGELOG_RECORD"
-
-        echo "scopes:"
-        echo "$SCOPES" | jq .
+          core.summary
+            .addHeading('Semver Output:')
+            .addCodeBlock(JSON.stringify(semverOutputs, null, 2), 'json')
+            .write()      
