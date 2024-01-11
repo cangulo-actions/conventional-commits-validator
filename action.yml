@@ -235,7 +235,7 @@ runs:
               core.warning('Please check them carefully 🔎', { title: 'Changes will generate a major release' })
             }
           } else {
-            core.notice(`commit messages don't include any change that trigger a release`, { title: 'Changes will not generate a new release' })
+            core.notice(`commits won't trigger a new release`, { title: 'Changes will not generate a new release' })
           }
 
           core.setOutput('next-release-triggered', result.releaseRequired)
