@@ -1,3 +1,8 @@
+# 0.3.2 fix: cd workflow (#35)
+
+## patches:
+* fix: cd workflow (#35)
+
 # 0.3.1 fix: #9 fixed input name (#21)
 
 ## patches:
