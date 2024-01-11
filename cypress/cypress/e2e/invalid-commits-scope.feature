@@ -1,25 +1,10 @@
 Feature: Reject commits with invalid scopes
 
-  Background: The gh action runs with custom configuration
-    Given I checkout a branch from main
-    And I create the "commits-config-test.yml" file with the next content:
+  Background: The gh action runs with custom configurationuration
+    Given I create a repository named "cc-PR-{PR_NUMBER}-{TEST_KEY}"
+    And I push the file ".github/workflows/cc-test.yml" to the branch "main" with the content:
       """
-      commits:
-        - type: ci
-          release: none
-
-      scopes:
-        - key: tfm
-          files:
-            - "terraform/**"
-        - key: src
-          files:
-            - "src/**"
-      """
-    And I stage the file "commits-config-test.yml"
-    And I create the ".github/workflows/cc-test.yml" file with the next content:
-      """
-      name: Test conventional-commits-validator
+      name: cangulo-actions/conventional-commits-validator test
       on:
         pull_request: 
           branches:
@@ -29,22 +14,28 @@ Feature: Reject commits with invalid scopes
         validate-commits:
           name: Validate Commits
           runs-on: ubuntu-latest
+          permissions:
+            contents: read
+            pull-requests: read
           steps:
-            - name: checkout
-              uses: actions/checkout@v4
-      
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
               with:
                 configuration: commits-config-test.yml
       """
-    And I stage the file ".github/workflows/cc-test.yml"
-    And I create a commit with the message "ci: added cc-test.yml with custom config"
+    And I push the file "commits-config-test.yml" to the branch "main" with the content:
+      """
+      scopes:
+        - key: tfm
+          files:
+            - "terraform/**"
+        - key: src
+          files:
+            - "src/**"
+      """
 
   Scenario: commits with invalid scope
-    Given I modify and stage the file: "src/lambda1/lambda1.py"
-    And I create a commit with the message "ci(tfm): updated lambda code"
-    And I push my branch
+    Given I create a branch named "invalid-commits-scope"
+    And I commit "ci(tfm): updated lambda code" modifying the file "src/lambda1/lambda1.py"
     When I create a PR with title "invalid-commits: wrong scope"
-    Then the workflow "Test conventional-commits-validator" must conclude in "failure"
-    And I close the PR
+    Then the workflow "cangulo-actions/conventional-commits-validator test" must conclude in "failure"

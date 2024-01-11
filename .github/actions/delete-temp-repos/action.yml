@@ -1,0 +1,46 @@
+name: 'Delete temp repositories'
+inputs:
+  org: 
+    description: 'Who to greet'
+    required: true
+  repo-prefix:
+    description: 'Prefix of the repositories to delete'
+    required: true
+  gh-token:
+    description: 'GitHub token with permissions to delete repositories'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+  - name: Delete any temporary repositories
+    uses: actions/github-script@v7.0.1
+    env:
+      OWNER: ${{ inputs.org }}
+      REPO_PREFIX: ${{ inputs.repo-prefix }}
+    with:
+      github-token: ${{ inputs.gh-token }}
+      script: |
+        const owner         = process.env.OWNER
+        const repoPrefix    = process.env.REPO_PREFIX
+
+        const reposToDelete = await github.rest.repos.listForOrg({
+          org: owner,
+          type: 'all',
+          per_page: 100
+        })
+
+        if (reposToDelete.data.length === 0) {
+          console.log(`No repos found for ${owner}`)
+          return
+        }
+
+        for (const repo of reposToDelete.data) {
+          if (repo.name.startsWith(repoPrefix)) {
+            console.log(`Deleting repo ${repo.name}`)
+            await github.rest.repos.delete({
+              owner: owner,
+              repo: repo.name
+            })
+          }
+        }

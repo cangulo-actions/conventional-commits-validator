@@ -1,12 +1,12 @@
-Cypress.Commands.add('getCheckRunAnnotations', (checkRunId) => {
+Cypress.Commands.add('getCheckRunAnnotations', ({ owner, repo, checkRunId }) => {
   const ghAPIUrl = Cypress.env('GH_API_URL')
-  const getCommitCheckRunsUrl = `${ghAPIUrl}/check-runs/${checkRunId}/annotations`
+  const getCheckRunAnnotationsUrl = `${ghAPIUrl}/repos/${owner}/${repo}/check-runs/${checkRunId}/annotations`
 
   return cy
     .request(
       {
         method: 'GET',
-        url: getCommitCheckRunsUrl,
+        url: getCheckRunAnnotationsUrl,
         headers: {
           Authorization: `token ${Cypress.env('GH_TOKEN')}`
         }

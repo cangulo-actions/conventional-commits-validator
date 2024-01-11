@@ -1,10 +1,10 @@
 Feature: Validate Commit types using default configuration
 
   Background: The gh action is configured with the default configuration
-    Given I checkout a branch from main
-    And I create the ".github/workflows/cc-test.yml" file with the next content:
+    Given I create a repository named "cc-PR-{PR_NUMBER}-{TEST_KEY}"
+    And I push the file ".github/workflows/cc-test.yml" to the branch "main" with the content:
       """
-      name: Test conventional-commits-validator
+      name: cangulo-actions/conventional-commits-validator test
       on:
         pull_request: 
           branches:
@@ -14,24 +14,21 @@ Feature: Validate Commit types using default configuration
         validate-commits:
           name: Validate Commits
           runs-on: ubuntu-latest
+          permissions:
+            contents: read
+            pull-requests: read
           steps:
-            - name: checkout
-              uses: actions/checkout@v4
-      
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
       """
-    And I stage the file ".github/workflows/cc-test.yml"
-    And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
-    Given I modify the next files and commit each change with the message
-      | <file>                 | <commig message>                                |
-      | terraform/main.tf      | ci: commit that fixes something in terraform    |
-      | src/lambda1/lambda1.py | fix: commit that fixes something in the lambdas |
-      | terraform/main.tf      | feat: commit that adds a feature in terraform   |
-      | docs/notes.md          | break: commit that introduce a breaking change  |
-    And I push my branch
+    Given I create a branch named "valid-commits-types"
+    And I push the next commits modifying the files:
+      | <commig message>                                | <file>                 |
+      | ci: commit that fixes something in terraform    | terraform/main.tf      |
+      | fix: commit that fixes something in the lambdas | src/lambda1/lambda1.py |
+      | feat: commit that adds a feature in terraform   | terraform/db.tf        |
+      | break: commit that introduce a breaking change  | docs/notes.md          |
     When I create a PR with title "valid-commits: correct commit types provided"
-    Then the workflow "Test conventional-commits-validator" must conclude in "success"
-    And I close the PR
+    Then the workflow "cangulo-actions/conventional-commits-validator test" must conclude in "success"

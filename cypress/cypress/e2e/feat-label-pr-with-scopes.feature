@@ -1,10 +1,10 @@
 Feature: Label PR with commit scopes
 
-  Background: The gh action runs with the default configuration
-    Given I checkout a branch from main
-    And I create the ".github/workflows/cc-test.yml" file with the next content:
+  Background: The gh action runs with the label-pr-with-commit-scopes flag  enabled
+    Given I create a repository named "cc-PR-{PR_NUMBER}-{TEST_KEY}"
+    And I push the file ".github/workflows/cc-test.yml" to the branch "main" with the content:
       """
-      name: Test conventional-commits-validator
+      name: cangulo-actions/conventional-commits-validator test
       on:
         pull_request: 
           branches:
@@ -14,30 +14,27 @@ Feature: Label PR with commit scopes
         validate-commits:
           name: Validate Commits
           runs-on: ubuntu-latest
+          permissions:
+            contents: read
+            pull-requests: write # required for adding labels to PRs
           steps:
-            - name: checkout
-              uses: actions/checkout@v4
-      
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
               with:
                 label-pr-with-commit-scopes: true
       """
-    And I stage the file ".github/workflows/cc-test.yml"
-    And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
-    Given I modify the next files and commit each change with the message
-      | <file>                 | <commig message>                                     |
-      | terraform/main.tf      | ci(tfm): commit that fixes something in terraform    |
-      | src/lambda1/lambda1.py | fix(src): commit that fixes something in the lambdas |
-      | terraform/main.tf      | feat(tfm): commit that adds a feature in terraform   |
-      | docs/notes.md          | break: commit that introduce a breaking change       |
-    And I push my branch
+    Given I create a branch named "feat-label-pr-with-commit-scopes"
+    And I push the next commits modifying the files:
+      | <commig message>                                     | <file>                 |
+      | ci(tfm): commit that fixes something in terraform    | terraform/main.tf      |
+      | fix(src): commit that fixes something in the lambdas | src/lambda1/lambda1.py |
+      | feat(tfm): commit that adds a feature in terraform   | terraform/db.tf        |
+      | break: commit that introduce a breaking change       | docs/notes.md          |
     When I create a PR with title "test: label PR with commit scopes"
-    Then the workflow "Test conventional-commits-validator" must conclude in "success"
+    Then the workflow "cangulo-actions/conventional-commits-validator test" must conclude in "success"
     And The PR must include the labels
       | <label> |
       | tfm     |
       | src     |
-    And I close the PR
