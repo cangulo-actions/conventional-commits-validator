@@ -1,10 +1,10 @@
 Feature: Calculate next release when docs are updated
 
-  Background: The gh action runs with the default configuration
-    Given I checkout a branch from main
-    And I create the ".github/workflows/cc-test.yml" file with the next content:
+  Background: The gh action runs with the calcualte-next-release flag enabled
+    Given I create a repository named "cc-PR-{PR_NUMBER}-{TEST_KEY}"
+    And I push the file ".github/workflows/cc-test.yml" to the branch "main" with the content:
       """
-      name: Test conventional-commits-validator
+      name: cangulo-actions/conventional-commits-validator test
       on:
         pull_request: 
           branches:
@@ -14,25 +14,23 @@ Feature: Calculate next release when docs are updated
         validate-commits:
           name: Validate Commits
           runs-on: ubuntu-latest
+          permissions:
+            contents: read
+            pull-requests: read
           steps:
-            - name: checkout
-              uses: actions/checkout@v4
-      
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
               with:
                 calculate-next-release: true
       """
-    And I stage the file ".github/workflows/cc-test.yml"
-    And I create a commit with the message "ci: added cc-test.yml with default config"
 
   Scenario: Valid Commits
-    Given I modify the file "refresh.md"
-    And I stage the file "refresh.md"
-    And I create a commit with the message "docs: updated readme"
-    And I push my branch
+    Given I create a branch named "feat-calculate-next-release"
+    And I push the next commits modifying the files:
+      | <commig message>            | <file>        |
+      | docs: updated docs/notes.md | docs/notes.md |
     When I create a PR with title "feat: Calculate next release when docs are updated"
-    Then the workflow "Test conventional-commits-validator" must conclude in "success"
-    And the workflow must show "1" annotations
-    And this annotation is of type "notice", has title "Changes will not generate a new release" and its message includes "commit messages don't include any change that trigger a release"
-    And I close the PR
+    Then the workflow "cangulo-actions/conventional-commits-validator test" must conclude in "success"
+    And the next annotations must be listed:
+      | <level> | <title>                                 | <partial-message>                                               |
+      | notice  | Changes will not generate a new release | commit messages don't include any change that trigger a release |

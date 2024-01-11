@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [main]
 
-concurrency:  # concurrency set to avoid conflicts pushing to CrazyActionsTests repo
-  group: e2e-tests
-  cancel-in-progress: false
-
 env:
   GH_E2E_user: cangulo-cc-e2e-test[bot]
   GH_E2E_email: cangulo-cc-e2e-test[bot]@users.noreply.github.com
@@ -51,7 +47,7 @@ jobs:
           echo "# CI failed validating code style"    >> $GITHUB_STEP_SUMMARY
           echo "To fix the code style, run:"          >> $GITHUB_STEP_SUMMARY
           echo "npm run lint-fix"                     >> $GITHUB_STEP_SUMMARY
-          echo "[ESLINT Tutorail]($ESLINT_TUTORIAL)"  >> $GITHUB_STEP_SUMMARY
+          echo "[ESLINT Tutorial]($ESLINT_TUTORIAL)"  >> $GITHUB_STEP_SUMMARY
 
   test-JS:
     name: 🧪 JS Tests
@@ -72,167 +68,102 @@ jobs:
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
-          name: JS Tests  # Name of the check run which will be created
+          name: JS Tests # Name of the check run which will be created
           path: reports/jest-*.xml
           reporter: jest-junit
 
-  prepare-test-e2e:
-    name: 🥡 zip cypress tests
+  test-e2e:
+    name: ${{ matrix.scenario }}
     needs: get-changes
     if: needs.get-changes.outputs.action-modified == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout cc repository
-        uses: actions/checkout@v4.1.1
-
-      - name: create cypress artifact
-        uses: actions/upload-artifact@v4.0.0
-        with:
-          name: cypress
-          path: cypress
-
-  # tests are executed in the cangulo-actions/CrazyActionsTests repo
-  test-e2e:
-    name: "e2e-cypress: ${{ matrix.scenario }}"
-    needs:
-      - prepare-test-e2e
-      - get-changes
-    if: needs.get-changes.outputs.action-modified == 'true'
-    runs-on: ubuntu-latest
+    concurrency:  # concurrency set to avoid conflicts pushing to each repo
+      group: e2e-tests-${{ matrix.spec }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
         include:
           - scenario: 🚬 smoke tests
             spec: cypress/e2e/smoke-test.feature
-            branch-to-create: smoke
+            key: smoke-test
 
           - scenario: Invalid Commit Type
             spec: cypress/e2e/invalid-commits-type.feature
-            branch-to-create: invalid-commits-type
+            key: invalid-commits-type
 
           - scenario: Invalid Commit Msg
             spec: cypress/e2e/invalid-commits-msg.feature
-            branch-to-create: invalid-commits-msg
+            key: invalid-commits-msg
 
           - scenario: Invalid scope
             spec: cypress/e2e/invalid-commits-scope.feature
-            branch-to-create: invalid-commits-scope
+            key: invalid-commits-scope
 
           - scenario: Invalid configuration
             spec: cypress/e2e/invalid-configuration.feature
-            branch-to-create: invalid-configuration
+            key: invalid-configuration
 
           - scenario: Valid Commit Types
             spec: cypress/e2e/valid-commits-types.feature
-            branch-to-create: valid-commits-types
+            key: valid-commits-types
 
           - scenario: Valid Scopes
             spec: cypress/e2e/valid-commits-scopes.feature
-            branch-to-create: valid-commits-scopes
-
-          - scenario: Feat - Calculate next release when docs are updated
-            spec: cypress/e2e/feat-calculate-next-release-docs.feature
-            branch-to-create: feat-calc-next-release-docs
+            key: valid-commits-scopes
 
           - scenario: Feat - Calculate next release when breaking changes are introduced
             spec: cypress/e2e/feat-calculate-next-release-break.feature
-            branch-to-create: feat-calc-next-release-break
+            key: feat-calc-next-release-break
+
+          - scenario: Feat - Calculate next release when docs are updated
+            spec: cypress/e2e/feat-calculate-next-release-docs.feature
+            key: feat-calc-next-release-docs
 
           - scenario: Feat - Label PR with the next release
             spec: cypress/e2e/feat-label-pr-with-release-type.feature
-            branch-to-create: feat-label-pr-with-release-type
+            key: feat-label-pr-with-release-type
 
           - scenario: Feat - Label PR with commit types
             spec: cypress/e2e/feat-label-pr-with-commit-types.feature
-            branch-to-create: feat-label-pr-with-commit-types
+            key: feat-label-pr-with-commit-types
 
           - scenario: Feat - Label PR with commit scopes
             spec: cypress/e2e/feat-label-pr-with-scopes.feature
-            branch-to-create: feat-label-pr-with-scopes
+            key: feat-label-pr-with-scopes
 
-    env:
-      CYPRESS_GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
-      CYPRESS_GH_API_URL: https://api.github.com/repos/cangulo-actions/CrazyActionsTests
-      CYPRESS_WAIT_TIME_CI_WORKFLOW: 25000  # wait 25 seconds before checking the CD workflow
-      CYPRESS_API_RETRY_INTERVAL_MS: 10000  # retry every 10 seconds
-      CYPRESS_API_RETRY_TIMEOUT_MS: 40000   # timeout after 40 seconds of retry
-      CYPRESS_CC_BRANCH: ${{ github.head_ref }}
-      CYPRESS_CC_PR_NUMBER: ${{ github.event.number }}
-      CYPRESS_BRANCH_TO_CREATE: test-cc-pr-${{ github.event.number }}-${{ matrix.branch-to-create }}
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout cangulo-actions/CrazyActionsTests repository
+      - name: Checkout semver repository
         uses: actions/checkout@v4.1.1
+
+      - name: 🧹 delete any temporary repository
+        uses: ./.github/actions/delete-temp-repos
         with:
-          repository: cangulo-actions/CrazyActionsTests
-          ref: main
-          token: ${{ secrets.GH_AUTOMATION_TOKEN }}
-
-      - name: configure git credentials
-        run: |
-          git config user.name  "${{ env.GH_E2E_user }}"
-          git config user.email "${{ env.GH_E2E_email }}"
-
-      - name: 🥡 Download cypress artifact
-        uses: actions/download-artifact@v4.1.0
-        with:
-          name: cypress
-          path: cypress-cc
-
-      - name: move cypress folder to root
-        run: |
-          rm -rf cypress                        # remove any local cypress folder
-          mv cypress-cc/* . --force --verbose   # move cypress from artifact to root
+          org: cangulo-actions-test
+          repo-prefix: cc-PR-${{ github.event.number }}-${{ matrix.key }}
+          gh-token: ${{ secrets.GH_AUTOMATION_TOKEN }}
 
       - name: 🧪 run cypress e2e tests
         uses: cypress-io/github-action@v6.6.0
         with:
           spec: ${{ matrix.spec }}
-
-  clean-repo-after-e2e:
-    name: 🧹 Clean repo after e2e tests if failure
-    needs: test-e2e
-    if: >
-      always() && needs.test-e2e.result == 'failure'
-    runs-on: ubuntu-latest
-    steps:
-      - name: GitHub Script
-        uses: actions/github-script@v7.0.1
+          working-directory: cypress
         env:
-          OWNER: cangulo-actions
-          REPO: CrazyActionsTests
-          BRANCH_PREFIX: test-cc-pr-
+          CYPRESS_TEST_KEY: ${{ matrix.key }}
+          CYPRESS_GH_ORG: cangulo-actions-test
+          CYPRESS_GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
+          CYPRESS_GH_API_URL: https://api.github.com
+          CYPRESS_WAIT_TIME_CI_WORKFLOW: 25000  # wait 25 seconds before checking the CD workflow
+          CYPRESS_API_RETRY_INTERVAL_MS: 10000  # retry every 10 seconds
+          CYPRESS_API_RETRY_TIMEOUT_MS: 40000   # timeout after 40 seconds of retry
+          CYPRESS_CC_BRANCH: ${{ github.head_ref }}
+          CYPRESS_CC_PR_NUMBER: ${{ github.event.number }}
+          CYPRESS_GH_USER_NAME: ${{ env.GH_E2E_user }}
+          CYPRESS_GH_USER_EMAIL: ${{ env.GH_E2E_email }}
+
+      - name: 🧹 delete any temporary repository
+        uses: ./.github/actions/delete-temp-repos
         with:
-          github-token: ${{ secrets.GH_AUTOMATION_TOKEN }}
-          script: |
-            const owner         = process.env.OWNER
-            const repo          = process.env.REPO
-            const branchPrefix  = process.env.BRANCH_PREFIX
-
-            const response = await github.rest.pulls.list({
-              owner,
-              repo,
-              state: 'open'
-            })
-            const pendingPRs = response.data
-
-            pendingPRs.forEach(async (pr) => {
-              if (pr.head.ref.startsWith(branchPrefix)) {
-                console.log(`Closing PR: number: ${pr.number} - title: ${pr.title}`)
-                await github.rest.pulls.update({
-                  owner,
-                  repo,
-                  pull_number: pr.number,
-                  state: 'closed'
-                })
-
-                // delete its branch
-                console.log(`Deleting branch: ${pr.head.ref}`)
-                await github.rest.git.deleteRef({
-                  owner,
-                  repo,
-                  ref: `heads/${pr.head.ref}`
-                })
-              }
-            })
-          
+          org: cangulo-actions-test
+          repo-prefix: cc-PR-${{ github.event.number }}-${{ matrix.key }}
+          gh-token: ${{ secrets.GH_AUTOMATION_TOKEN }}

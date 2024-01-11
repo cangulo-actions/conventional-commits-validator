@@ -1,10 +1,10 @@
 Feature: Smoke tests
 
   Background: The gh action runs with the default configuration
-    Given I checkout a branch from main
-    And I create the ".github/workflows/cc-test.yml" file with the next content:
+    Given I create a repository named "cc-PR-{PR_NUMBER}-{TEST_KEY}"
+    And I push the file ".github/workflows/cc-test.yml" to the branch "main" with the content:
       """
-      name: Test conventional-commits-validator
+      name: cangulo-actions/conventional-commits-validator test
       on:
         pull_request: 
           branches:
@@ -14,19 +14,16 @@ Feature: Smoke tests
         validate-commits:
           name: Validate Commits
           runs-on: ubuntu-latest
+          permissions:
+            contents: read
+            pull-requests: read
           steps:
-            - name: checkout
-              uses: actions/checkout@v4
-
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
       """
-    And I stage the file ".github/workflows/cc-test.yml"
-    And I create a commit with the message "ci: added cc-test.yml"
-    And I push my branch
 
-  @smoke
   Scenario: I create a PR with one commit fixing something
+    Given I create a branch named "smoke-test"
+    And I commit "fix: commit that fixes something in the lambda1" modifying the file "src/lambda1/lambda1.py"
     When I create a PR with title "cc smoke test"
-    Then the workflow "Test conventional-commits-validator" must conclude in "success"
-    And I close the PR
+    Then the workflow "cangulo-actions/conventional-commits-validator test" must conclude in "success"

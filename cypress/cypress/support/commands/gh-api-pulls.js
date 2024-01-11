@@ -1,6 +1,6 @@
-Cypress.Commands.add('createPR', ({ title, description, branch }) => {
+Cypress.Commands.add('createPR', ({ owner, repo, title, description, head }) => {
   const ghAPIUrl = Cypress.env('GH_API_URL')
-  const pullsUrl = `${ghAPIUrl}/pulls`
+  const pullsUrl = `${ghAPIUrl}/repos/${owner}/${repo}/pulls`
 
   return cy
     .request(
@@ -12,7 +12,7 @@ Cypress.Commands.add('createPR', ({ title, description, branch }) => {
         },
         body: {
           base: 'main',
-          head: branch,
+          head,
           title,
           body: description
         }
@@ -28,32 +28,9 @@ Cypress.Commands.add('createPR', ({ title, description, branch }) => {
     })
 })
 
-Cypress.Commands.add('closePR', (number) => {
+Cypress.Commands.add('getPR', ({ owner, repo, number }) => {
   const ghAPIUrl = Cypress.env('GH_API_URL')
-  const pullsUrl = `${ghAPIUrl}/pulls/${number}`
-
-  return cy
-    .request(
-      {
-        method: 'PATCH',
-        url: pullsUrl,
-        headers: {
-          Authorization: `token ${Cypress.env('GH_TOKEN')}`
-        },
-        body: {
-          state: 'closed'
-        }
-      }
-    )
-    .then((response) => {
-      const mergeCommit = response.body.sha
-      return mergeCommit
-    })
-})
-
-Cypress.Commands.add('getPR', (number) => {
-  const ghAPIUrl = Cypress.env('GH_API_URL')
-  const pullsUrl = `${ghAPIUrl}/pulls/${number}`
+  const pullsUrl = `${ghAPIUrl}/repos/${owner}/${repo}/pulls/${number}`
 
   return cy
     .request(
