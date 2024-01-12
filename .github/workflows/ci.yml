@@ -141,7 +141,7 @@ jobs:
         with:
           org: cangulo-actions-test
           repo-prefix: cc-PR-${{ github.event.number }}-${{ matrix.key }}
-          gh-token: ${{ secrets.GH_AUTOMATION_TOKEN }}
+          gh-token: ${{ secrets.CANGULO_BOT_DELETE_REPO }}
 
       - name: 🧪 run cypress e2e tests
         uses: cypress-io/github-action@v6.6.0
@@ -151,7 +151,7 @@ jobs:
         env:
           CYPRESS_TEST_KEY: ${{ matrix.key }}
           CYPRESS_GH_ORG: cangulo-actions-test
-          CYPRESS_GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
+          CYPRESS_GH_TOKEN: ${{ secrets.CANGULO_BOT_MODIFY_GH_WORKFLOWS }}
           CYPRESS_GH_API_URL: https://api.github.com
           CYPRESS_WAIT_TIME_CI_WORKFLOW: 25000  # wait 25 seconds before checking the CD workflow
           CYPRESS_API_RETRY_INTERVAL_MS: 10000  # retry every 10 seconds
@@ -166,4 +166,4 @@ jobs:
         with:
           org: cangulo-actions-test
           repo-prefix: cc-PR-${{ github.event.number }}-${{ matrix.key }}
-          gh-token: ${{ secrets.GH_AUTOMATION_TOKEN }}
+          gh-token: ${{ secrets.CANGULO_BOT_DELETE_REPO }}
