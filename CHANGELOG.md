@@ -1,3 +1,8 @@
+# 0.3.3 fix: updated GH workflows to use new tokens (#37)
+
+## patches:
+* fix: updated GH workflows to use new tokens (#37)
+
 # 0.3.2 fix: added GH token to cd workflow for pushing to main (#36)
 
 ## patches:
