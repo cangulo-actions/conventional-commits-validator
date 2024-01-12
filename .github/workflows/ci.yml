@@ -75,7 +75,7 @@ jobs:
   test-e2e:
     name: ${{ matrix.scenario }}
     needs: get-changes
-    if: needs.get-changes.outputs.action-modified == 'true'
+    if: needs.get-changes.outputs.action-modified == 'true' || needs.get-changes.outputs.e2e-tests-modified == 'true'
     concurrency:  # concurrency set to avoid conflicts pushing to each repo
       group: e2e-tests-${{ matrix.spec }}
       cancel-in-progress: false

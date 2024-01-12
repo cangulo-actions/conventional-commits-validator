@@ -5,6 +5,8 @@ on:
     outputs:
       js-modified: 
         value: ${{ jobs.get-changes.outputs.js-modified }}
+      e2e-tests-modified:
+        value: ${{ jobs.get-changes.outputs.e2e-tests-modified }}
       action-modified: 
         value: ${{ jobs.get-changes.outputs.action-modified }}
 
@@ -14,7 +16,8 @@ jobs:
     name: 🔎 Get Changes
     runs-on: ubuntu-latest
     outputs:
-      js-modified: ${{ steps.changes.outputs.js == 'true' || steps.changes.outputs.tests == 'true' }}
+      js-modified: ${{ steps.changes.outputs.js == 'true' || steps.changes.outputs.js-tests == 'true' }}
+      e2e-tests-modified: ${{ steps.changes.outputs.e2e-tests }}
       action-modified: ${{ steps.changes.outputs.action }}
     steps:
       - name: Checkout
@@ -29,9 +32,11 @@ jobs:
               - functions/**
               - package.json
               - package-lock.json
-            tests:
+            js-tests:
               - tests/index/**
               - tests/functions/**
+            e2e-tests:
+              - cypress/**
             action:
               - action.yml
               - cypress/**
