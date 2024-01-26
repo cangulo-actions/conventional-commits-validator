@@ -10,6 +10,13 @@ inputs:
       flag for calculating the next release. It will be printed in the summary.
     required: false
     default: 'false'
+  version-prefix:
+    description: |
+      string to be added as prefix to the version.
+      Only available if calculate-next-release is true.
+      Example: v -> next-version: v1.0.0
+    required: false
+    default: ''
   label-pr-with-release-type:
     description: >
       flag for adding the release type as a label to the PR.
@@ -196,7 +203,7 @@ runs:
           const changes               = JSON.parse(process.env.CHANGES)
 
           const supportedCommitTypes  = conf.commits.map(x => x.type)
-          const errors                = validateChanges(changes, supportedCommitTypes, conf.scopes)
+          const errors                = validateChanges(changes, supportedCommitTypes, conf.scopes.list)
 
           if (errors.length > 0) {
             const errorsJSON = JSON.stringify(errors, null, 2)
@@ -217,13 +224,16 @@ runs:
       env:
         CONFIG: ${{ steps.config.outputs.config }}
         CHANGES: ${{ steps.list-changes.outputs.changes }}
+        VERSION_PREFIX: ${{ inputs.version-prefix }}
       with:
         script: |
           const { buildNextReleases }   = require('${{ github.action_path }}/functions/build-next-releases')
           const conf                    = JSON.parse(process.env.CONFIG)
           const changes                 = JSON.parse(process.env.CHANGES)
+          const versionPrefix           = process.env.VERSION_PREFIX
 
-          const result = buildNextReleases(conf, changes)
+          let result        = buildNextReleases(conf, changes)
+          result['version'] = `${versionPrefix}${result['version']}`
 
           core.startGroup('Next Release')
           console.log('next release:', JSON.stringify(result, null, 2))
@@ -238,10 +248,10 @@ runs:
             core.notice(`commits won't trigger a new release`, { title: 'Changes will not generate a new release' })
           }
 
-          core.setOutput('next-release-triggered', result.releaseRequired)
-          core.setOutput('next-version', result.version)
-          core.setOutput('next-release-type', result.releaseType)
-          core.setOutput('scopes', result.scopes)
+          core.setOutput('next-release-triggered',  result.releaseRequired)
+          core.setOutput('next-version',            result.version)
+          core.setOutput('next-release-type',       result.releaseType)
+          core.setOutput('scopes',                  result.scopes)
 
     - name: add labels to the PR
       if: >

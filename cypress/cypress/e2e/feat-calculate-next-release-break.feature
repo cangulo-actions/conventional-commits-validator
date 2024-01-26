@@ -20,7 +20,6 @@ Feature: Calculate next release when breaking changes are introduced
           steps:
             - name: Checkout                  # is required to check the repo so the GH action reads the version.json file
               uses: actions/checkout@v4.1.1
-
             - name: Validate Conventional Commits
               uses: cangulo-actions/conventional-commits-validator@<TARGET_BRANCH>
               with:

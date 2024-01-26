@@ -38,31 +38,70 @@ properties:
         - release
 
   scopes:
-    type: array
-    description: |
-      The list of scopes that can be used in commit messages.
-    default: []
-    uniqueItems: true
-    items:
-      type: object
-      properties:
-        key:
-          type: string
-          description: |
-            "key provided in the commit messages example: 'feat(core): add new feature'"
-        versioning:
+    type: object
+    required:
+      - list
+    default:
+      calculate-next-version: false
+      tag-prefix: ''
+      print-summary: false
+      list: []
+    description: Scope configuration 
+    properties:
+      calculate-next-version:
+        type: boolean
+        description: >
+          flag to calculate the next version for all the scopes. 
+          Requires scopes.list['SCOPE'].versioning.file to be provided so previous version is read.
+        default: false
+      tag-prefix:
+        type: string
+        description: |
+          string to be added as prefix to all scopes tags.
+          Only available if calculate-next-version is true.
+          Example: v -> tag: scope-v1.0.0
+        default: ''
+      print-summary:
+        type: boolean
+        description: flag to print the release summary for all the scopes
+        default: false
+      list:
+        type: array
+        description: The scopes list
+        uniqueItems: true
+        items:
           type: object
-          description: |
-            The versioning configuration for the scope.
           properties:
-            file:
+            key:
               type: string
-              description: |
-                JSON file where the version is stored
+              description: "The scope key provided in the commit message. Example: `feat(scope): message`"
+            files:
+              type: array
+              description: The list of files modified for this scope
+              uniqueItems: true
+              items:
+                type: string
+                description: The file path or glob pattern for files modified for this scope
+                pattern: '^[^/.].*$'  # validate it does not start with "/" nor "."
+            versioning:
+              type: object
+              description: The versioning configuration for the scope.
+              properties:
+                calculate-next-version:
+                  type: boolean
+                  description: flag to calculate the next version for this scope
+                file:
+                  type: string
+                  description: JSON file where the version is stored. Required if calculate-next-version is true.
+                tag-prefix:
+                  type: string
+                  description: |
+                    string to be added as prefix to the tag for this scope.
+                    Only available if calculate-next-version is true.
+                    Example: v -> tag: scope-v1.0.0
           required:
-            - file
-      required:
-        - key
+            - key
+            - files
 
 required:
   - commits
