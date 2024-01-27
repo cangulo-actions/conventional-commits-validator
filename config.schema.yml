@@ -43,7 +43,6 @@ properties:
       - list
     default:
       calculate-next-version: false
-      tag-prefix: ''
       print-summary: false
       list: []
     description: Scope configuration 
@@ -52,15 +51,9 @@ properties:
         type: boolean
         description: >
           flag to calculate the next version for all the scopes. 
+          It will be printed as an annotation in the GH workflow.
           Requires scopes.list['SCOPE'].versioning.file to be provided so previous version is read.
         default: false
-      tag-prefix:
-        type: string
-        description: |
-          string to be added as prefix to all scopes tags.
-          Only available if calculate-next-version is true.
-          Example: v -> tag: scope-v1.0.0
-        default: ''
       print-summary:
         type: boolean
         description: flag to print the release summary for all the scopes
@@ -93,12 +86,6 @@ properties:
                 file:
                   type: string
                   description: JSON file where the version is stored. Required if calculate-next-version is true.
-                tag-prefix:
-                  type: string
-                  description: |
-                    string to be added as prefix to the tag for this scope.
-                    Only available if calculate-next-version is true.
-                    Example: v -> tag: scope-v1.0.0
           required:
             - key
             - files

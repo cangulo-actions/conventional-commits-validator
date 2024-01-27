@@ -1,22 +1,22 @@
-name: '🚔️ Commits Validation'
-description: 'Validate the commits in the PR'
+name: "🚔️ Commits Validation"
+description: "Validate the commits in the PR"
 inputs:
   configuration:
-    description: 'path to the YML configuration'
+    description: "path to the YML configuration"
     required: false
-    default: ''
+    default: ""
   calculate-next-release:
     description: >
-      flag for calculating the next release. It will be printed in the summary.
+      flag for calculating the next release. It will be printed as an annotation.
     required: false
-    default: 'false'
+    default: "false"
   version-prefix:
     description: |
       string to be added as prefix to the version.
       Only available if calculate-next-release is true.
       Example: v -> next-version: v1.0.0
     required: false
-    default: ''
+    default: ""
   label-pr-with-release-type:
     description: >
       flag for adding the release type as a label to the PR.
@@ -24,7 +24,7 @@ inputs:
       Release Types: 'major', 'minor', 'patch', 'no-release'
       Example: 'release-type:major'
     required: false
-    default: 'false'
+    default: "false"
   label-pr-with-commit-types:
     description: >
       flag for adding each commit type as a label to the PR.
@@ -32,28 +32,28 @@ inputs:
       Commit Types: defined in 'commits.default' at ./config.schema.yml or in the inputs.configuration file
       Example: 'fix,docs'
     required: false
-    default: 'false'
+    default: "false"
   label-pr-with-commit-scopes:
     description: flag for adding all scopes as labels to the PR.
     required: false
-    default: 'false'
+    default: "false"
 
 outputs:
   new-release-triggered:
     value: ${{ steps.calculate-next-release.outputs.next-release-triggered }}
-    description: 'flag to detect if the PR changes will trigger a new release'
+    description: "flag to detect if the PR changes will trigger a new release"
   next-version:
     value: ${{ steps.calculate-next-release.outputs.next-version }}
-    description: 'version to be released when the PR is merged'
+    description: "version to be released when the PR is merged"
   next-release-type:
     value: ${{ steps.calculate-next-release.outputs.next-release-type }}
-    description: 'next release type: major, minor or patch'
+    description: "next release type: major, minor or patch"
   changes:
     value: ${{ steps.calculate-next-release.outputs.changes }}
-    description: 'commits parsed into model: [{type, releaseAssociated, scopes, description, originalCommit}]'
+    description: "commits parsed into model: [{type, releaseAssociated, scopes, description, originalCommit}]"
   scopes:
     value: ${{ steps.semver.outputs.scopes }}
-    description: '{scopename:{version,changes,changelog-record}}'
+    description: "{scopename:{version,changes,changelog-record}}"
 
 runs:
   using: "composite"
@@ -99,7 +99,7 @@ runs:
 
           const ajv       = new Ajv({ useDefaults: true })  // add default values to the config properties
           const validate  = ajv.compile(schema)
-          const valid     = validate(config)
+          const valid     = validate(config)                // from now on config includes any missing default values
 
           if (!valid) {
             const errorsJson = JSON.stringify(validate.errors, null, 2)
@@ -110,7 +110,10 @@ runs:
           console.log('config:', JSON.stringify(config, null, 2))
           core.endGroup()
 
+          const scopesRequireCalculateNextRelease = config.scopes.list.some(x => x['calculate-next-version'] === true) || config.scopes['calculate-next-version']
+
           core.setOutput('config', config)
+          core.setOutput('scopes-require-calculate-next-release', scopesRequireCalculateNextRelease)
 
     - name: Get commit messages
       uses: actions/github-script@v7
@@ -169,7 +172,7 @@ runs:
       uses: actions/github-script@v7
       id: list-changes
       env:
-        CONFIG: ${{ steps.config.outputs.config }} 
+        CONFIG: ${{ steps.config.outputs.config }}
         COMMITS: ${{ steps.get-commits.outputs.commits }}
       with:
         script: |
@@ -219,7 +222,7 @@ runs:
 
     - name: Calculate next release
       uses: actions/github-script@v7
-      if: ${{ inputs.calculate-next-release == 'true' }}
+      if: ${{ inputs.calculate-next-release == 'true' || steps.config.outputs.scopes-require-calculate-next-release == 'true' }}
       id: calculate-next-release
       env:
         CONFIG: ${{ steps.config.outputs.config }}
@@ -239,26 +242,54 @@ runs:
           console.log('next release:', JSON.stringify(result, null, 2))
           core.endGroup()
 
-          if (result.releaseRequired) {
-            core.notice(`${result.version} - ${result.releaseType} release`, { title: 'Next Release' })
-            if(result.releaseType === 'major') {
-              core.warning('Please check them carefully 🔎', { title: 'Changes will generate a major release' })
-            }
-          } else {
-            core.notice(`commits won't trigger a new release`, { title: 'Changes will not generate a new release' })
-          }
-
           core.setOutput('next-release-triggered',  result.releaseRequired)
           core.setOutput('next-version',            result.version)
           core.setOutput('next-release-type',       result.releaseType)
           core.setOutput('scopes',                  result.scopes)
+
+    - name: Print next release
+      uses: actions/github-script@v7
+      if: ${{ inputs.calculate-next-release == 'true' || steps.config.outputs.scopes-require-calculate-next-release == 'true' }}
+      id: print-next-release
+      env:
+        CONFIG: ${{ steps.config.outputs.config }}
+        NEXT_RELEASE_REQUIRED: ${{ steps.calculate-next-release.outputs.next-release-triggered }}
+        NEXT_VERSION: ${{ steps.calculate-next-release.outputs.next-version }}
+        NEXT_RELEASE_TYPE: ${{ steps.calculate-next-release.outputs.next-release-type }}
+        SCOPES: ${{ steps.calculate-next-release.outputs.scopes }}
+      with:
+        script: |
+          const conf                    = JSON.parse(process.env.CONFIG)
+          const nextReleaseRequired     = process.env.NEXT_RELEASE_REQUIRED === 'true'
+          const nextVersion             = process.env.NEXT_VERSION
+          const nextReleaseType         = process.env.NEXT_RELEASE_TYPE
+          const scopes                  = JSON.parse(process.env.SCOPES)
+
+          if (nextReleaseRequired) {
+            const noticeMsgs = [
+              { body: `${nextVersion} - ${nextReleaseType} release`, title: 'Next Release' }
+            ]
+
+            for (const [scopeName, scope] of Object.entries(scopes)) {
+              noticeMsgs.push({ body: `${scope.version} - ${scope.releaseType} release`, title: `Next Release for ${scopeName} scope` })
+            }
+
+            noticeMsgs.forEach(msg => core.notice(msg.body, { title: msg.title }))
+
+            if(nextReleaseType === 'major') {
+              core.warning('Please check them carefully 🔎', { title: 'Changes will generate a major release' })
+            }
+
+          } else {
+            core.notice(`commits won't trigger a new release`, { title: 'Changes will not generate a new release' })
+          }
 
     - name: add labels to the PR
       if: >
         inputs.label-pr-with-commit-scopes    == 'true' ||
         inputs.label-pr-with-commit-types     == 'true' ||
         (
-          inputs.calculate-next-release               == 'true' && 
+          inputs.calculate-next-release     == 'true' && 
           inputs.label-pr-with-release-type == 'true' 
         )
       uses: actions/github-script@v7

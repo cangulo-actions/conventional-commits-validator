@@ -169,6 +169,19 @@
                 "files": [
                     ".github/workflows/ci.yml"
                 ]
+            },
+            {
+                "type": "fix",
+                "releaseAssociated": "patch",
+                "scopes": [
+                    "assets"
+                ],
+                "description": "#123 fixed typo in logo",
+                "originalCommit": "fix: #123 fixed typo in logo",
+                "commitId": "7ae23da03101ba282a92eaf9780f51fd6034eb91",
+                "files": [
+                    "assets/logo.png"
+                ]
             }
         ],
         "result": {

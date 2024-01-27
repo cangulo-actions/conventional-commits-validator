@@ -19,6 +19,10 @@ jobs:
       - name: Validate Conventional Commits using the current branch
         uses: ./
         id: validate-commits
+        with:
+          calculate-next-release: true
+          label-pr-with-release-type: true
+          label-pr-with-commit-types: true
 
   get-changes:
     name: 🔎 Get Changes
@@ -83,6 +87,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - scenario: "Default: Validate Commits"
+            spec: cypress/e2e/default-commits-types.feature
+            key: default-commits-types
+
           - scenario: 🚬 smoke tests
             spec: cypress/e2e/smoke-test.feature
             key: smoke-test
@@ -103,13 +111,13 @@ jobs:
             spec: cypress/e2e/invalid-configuration.feature
             key: invalid-configuration
 
-          - scenario: "Feat: conf.commits"
-            spec: cypress/e2e/feat-conf-commits-types.feature
-            key: feat-conf-commits-types
-
           - scenario: "Feat: conf.scopes"
-            spec: cypress/e2e/feat-conf-commits-scopes.feature
-            key: feat-conf-commits-scopes
+            spec: cypress/e2e/feat-conf-scopes.feature
+            key: feat-conf-scopes
+
+          - scenario: "Feat: conf.scopes.calculate-next-version"
+            spec: cypress/e2e/feat-conf-scopes-calculate-next-release.feature
+            key: feat-conf-scopes-calculate-next-release
 
           - scenario: Feat - Calculate next release when breaking changes are introduced
             spec: cypress/e2e/feat-calculate-next-release-break.feature

@@ -38,5 +38,5 @@ Feature: Calculate next release with a version-prefix
     When I create a PR with title "feat: calculate next release including a version-prefix"
     Then the workflow "cangulo-actions/conventional-commits-validator test" must conclude in "success"
     And the next annotations must be listed:
-      | <level> | <title>      | <partial-message>     |
-      | notice  | Next Release | 0.1.0 - minor release |
+      | <level> | <title>      | <partial-message>      |
+      | notice  | Next Release | v0.1.0 - minor release |

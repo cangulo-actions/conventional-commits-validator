@@ -22,8 +22,7 @@ function buildNextReleases (conf, changes) {
     result.version = nextVersion
     result.releaseType = nextReleaseType
 
-    const commitsContainAnyScope = changes.some(change => change.scopes.length > 0)
-    if (commitsContainAnyScope && conf.scopes.list.length > 0) {
+    if (conf.scopes.list.length > 0) {
       const scopesSupported = conf.scopes.list
       const scopesResult = {}
       const changesByScope = changes
@@ -35,13 +34,16 @@ function buildNextReleases (conf, changes) {
 
       for (const [scope, changes] of Object.entries(changesByScope)) {
         const scopeConfig = scopesSupported.find(x => x.key === scope)
-        const versionJsonPath = scopeConfig.versioning.file
-        const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, versionJsonPath)
+        const calculateVersion = scopeConfig['calculate-next-version'] ?? conf.scopes['calculate-next-version']
+        if (calculateVersion) {
+          const versionJsonPath = scopeConfig.versioning.file
+          const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, versionJsonPath)
 
-        if (requiresNewRelease) {
-          scopesResult[scope] = {
-            version: nextVersion,
-            releaseType: nextReleaseType
+          if (requiresNewRelease) {
+            scopesResult[scope] = {
+              version: nextVersion,
+              releaseType: nextReleaseType
+            }
           }
         }
       }
