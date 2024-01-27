@@ -1,3 +1,9 @@
+# 0.4.0 feat: support version-prefix when calculating next version. Fixes #39 (#40)
+
+## new features:
+* feat: support version-prefix when calculating next version. Fixes #39
+* feat: support calculating next version per scopes
+
 # 0.3.3 fix: updated GH workflows to use new tokens (#37)
 
 ## patches:
