@@ -30,7 +30,7 @@ describe('Validate Changes', () => {
             throw new Error(`Invalid configuration:\n${errorsJson}`)
           }
           const supportedCommitTypes = config.commits.map(x => x.type)
-          const scopesConfig = config.scopes
+          const scopesConfig = config.scopes.list
 
           const changes = data.input.changes
 

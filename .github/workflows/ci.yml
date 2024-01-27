@@ -19,6 +19,10 @@ jobs:
       - name: Validate Conventional Commits using the current branch
         uses: ./
         id: validate-commits
+        with:
+          calculate-next-release: true
+          label-pr-with-release-type: true
+          label-pr-with-commit-types: true
 
   get-changes:
     name: 🔎 Get Changes
@@ -65,7 +69,7 @@ jobs:
         run: npm run test
 
       - name: Test Report
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@86a20101473378575dcbaa709a4f2b772001fbbb
         if: success() || failure()
         with:
           name: JS Tests # Name of the check run which will be created
@@ -83,6 +87,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - scenario: "Default: Validate Commits"
+            spec: cypress/e2e/default-commits-types.feature
+            key: default-commits-types
+
           - scenario: 🚬 smoke tests
             spec: cypress/e2e/smoke-test.feature
             key: smoke-test
@@ -103,13 +111,13 @@ jobs:
             spec: cypress/e2e/invalid-configuration.feature
             key: invalid-configuration
 
-          - scenario: Valid Commit Types
-            spec: cypress/e2e/valid-commits-types.feature
-            key: valid-commits-types
+          - scenario: "Feat: conf.scopes"
+            spec: cypress/e2e/feat-conf-scopes.feature
+            key: feat-conf-scopes
 
-          - scenario: Valid Scopes
-            spec: cypress/e2e/valid-commits-scopes.feature
-            key: valid-commits-scopes
+          - scenario: "Feat: conf.scopes.calculate-next-version"
+            spec: cypress/e2e/feat-conf-scopes-calculate-next-release.feature
+            key: feat-conf-scopes-calculate-next-release
 
           - scenario: Feat - Calculate next release when breaking changes are introduced
             spec: cypress/e2e/feat-calculate-next-release-break.feature
@@ -118,6 +126,10 @@ jobs:
           - scenario: Feat - Calculate next release when docs are updated
             spec: cypress/e2e/feat-calculate-next-release-docs.feature
             key: feat-calc-next-release-docs
+
+          - scenario: Feat - Version Prefix
+            spec: cypress/e2e/feat-calculate-version-prefix.feature
+            key: feat-calculate-version-prefix
 
           - scenario: Feat - Label PR with the next release
             spec: cypress/e2e/feat-label-pr-with-release-type.feature
@@ -132,6 +144,9 @@ jobs:
             key: feat-label-pr-with-scopes
 
     runs-on: ubuntu-latest
+    env:
+      GH_ORG: cangulo-actions-test
+      GH_REPO_TO_RUN_E2E: cc-PR-${{ github.event.number }}-${{ matrix.key }}
     steps:
       - name: Checkout semver repository
         uses: actions/checkout@v4.1.1
@@ -139,8 +154,8 @@ jobs:
       - name: 🧹 delete any temporary repository
         uses: ./.github/actions/delete-temp-repos
         with:
-          org: cangulo-actions-test
-          repo-prefix: cc-PR-${{ github.event.number }}-${{ matrix.key }}
+          org: ${{ env.GH_ORG }}
+          repo: ${{ env.GH_REPO_TO_RUN_E2E }}
           gh-token: ${{ secrets.CANGULO_BOT_DELETE_REPO }}
 
       - name: 🧪 run cypress e2e tests
@@ -148,9 +163,10 @@ jobs:
         with:
           spec: ${{ matrix.spec }}
           working-directory: cypress
+          publish-summary: false
         env:
           CYPRESS_TEST_KEY: ${{ matrix.key }}
-          CYPRESS_GH_ORG: cangulo-actions-test
+          CYPRESS_GH_ORG: ${{ env.GH_ORG }}
           CYPRESS_GH_TOKEN: ${{ secrets.CANGULO_BOT_MODIFY_GH_WORKFLOWS }}
           CYPRESS_GH_API_URL: https://api.github.com
           CYPRESS_WAIT_TIME_CI_WORKFLOW: 25000  # wait 25 seconds before checking the CD workflow
@@ -161,9 +177,31 @@ jobs:
           CYPRESS_GH_USER_NAME: ${{ env.GH_E2E_user }}
           CYPRESS_GH_USER_EMAIL: ${{ env.GH_E2E_email }}
 
+      - name: Print link to the repo
+        uses: actions/github-script@v7.0.1
+        if: failure()
+        env:
+          OWNER: ${{ env.GH_ORG }}
+          REPO: ${{ env.GH_REPO_TO_RUN_E2E }}
+          TEST_SCENARIO: ${{ matrix.scenario }}
+          TEST_SPEC: ${{ matrix.spec }}
+        with:
+          script: |
+            const owner     = process.env.OWNER
+            const repo      = process.env.REPO
+            const scenario  = process.env.TEST_SCENARIO
+            const spec      = process.env.TEST_SPEC
+            const linkRepo  = `https://github.com/${owner}/${repo}/actions`
+
+            core
+              .summary
+              .addHeading(`🛑⚠️ Failed test for '${scenario}' (${spec})`)
+              .addLink(`Link to ${owner}/${repo} repo`, linkRepo)
+              .write()
+
       - name: 🧹 delete any temporary repository
         uses: ./.github/actions/delete-temp-repos
         with:
-          org: cangulo-actions-test
-          repo-prefix: cc-PR-${{ github.event.number }}-${{ matrix.key }}
+          org: ${{ env.GH_ORG }}
+          repo: ${{ env.GH_REPO_TO_RUN_E2E }}
           gh-token: ${{ secrets.CANGULO_BOT_DELETE_REPO }}

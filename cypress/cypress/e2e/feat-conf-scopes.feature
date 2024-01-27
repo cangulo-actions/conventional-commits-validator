@@ -5,12 +5,13 @@ Feature: Validate scopes using custom configuration
     And I push the file "commits-config-test.yml" to the branch "main" with the content:
       """
       scopes:
-        - key: tfm
-          files:
-            - "terraform/**"
-        - key: src
-          files:
-            - "src/**"
+        list:
+          - key: tfm
+            files:
+              - "terraform/**"
+          - key: src
+            files:
+              - "src/**"
       """
     And I push the file ".github/workflows/cc-test.yml" to the branch "main" with the content:
       """

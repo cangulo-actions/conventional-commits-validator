@@ -19,12 +19,21 @@ commits:
     release: none
 
 scopes:
-  - key: tfm
-    files:
-      - "terraform/**"
-    versioning:
-      file: terraform/version.json
-      changelog: terraform/CHANGELOG.md
-  - key: src
-    files:
-      - "src/**"
+  calculate-next-version: true
+  list:
+    - key: tfm
+      versioning:
+        file: terraform/version.json
+      files:
+        - "terraform/**"
+    - key: src
+      versioning:
+        file: src/version.json
+      files:
+        - "src/**"
+    - key: assets
+      calculate-next-version: false
+      versioning:
+        file: assets/version.json
+      files:
+        - "assets/**"

@@ -66,7 +66,7 @@ Then('the next annotations must be listed:', (table) => {
                     annotation.title === title &&
                     annotation.message.includes(partialMessage) &&
                     annotation.annotation_level === annotationLevel))
-                  .to.be.equal(true, 'the annotation must be listed')
+                  .to.be.equal(true, `the annotation ${annotationLevel} ${title} ${partialMessage} must be present`)
               })
             })
         })

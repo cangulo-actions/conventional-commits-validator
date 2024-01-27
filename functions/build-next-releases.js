@@ -22,9 +22,9 @@ function buildNextReleases (conf, changes) {
     result.version = nextVersion
     result.releaseType = nextReleaseType
 
-    const scopesResult = {}
-    const scopesConfig = conf.scopes
-    if (scopesConfig.length > 0) {
+    if (conf.scopes.list.length > 0) {
+      const scopesSupported = conf.scopes.list
+      const scopesResult = {}
       const changesByScope = changes
         .flatMap(change => change.scopes.map(scope => ({ scope, change })))
         .reduce((acc, entry) => {
@@ -33,29 +33,22 @@ function buildNextReleases (conf, changes) {
         }, {})
 
       for (const [scope, changes] of Object.entries(changesByScope)) {
-        const defaultScopeConfig = {
-          versioning: {
-            file: `${scope}/version.json`
-          }
-        }
-        const scopeConfig = {
-          ...defaultScopeConfig,
-          ...scopesConfig.find(x => x.key === scope)
-        }
+        const scopeConfig = scopesSupported.find(x => x.key === scope)
+        const calculateVersion = scopeConfig['calculate-next-version'] ?? conf.scopes['calculate-next-version']
+        if (calculateVersion) {
+          const versionJsonPath = scopeConfig.versioning.file
+          const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, versionJsonPath)
 
-        const versionJsonPath = scopeConfig.versioning.file
-        const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, versionJsonPath)
-
-        if (requiresNewRelease) {
-          scopesResult[scope] = {
-            version: nextVersion,
-            releaseType: nextReleaseType
+          if (requiresNewRelease) {
+            scopesResult[scope] = {
+              version: nextVersion,
+              releaseType: nextReleaseType
+            }
           }
         }
       }
+      result.scopes = scopesResult
     }
-
-    result.scopes = scopesResult
   }
 
   return result
