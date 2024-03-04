@@ -1,28 +1,40 @@
 type: object
 properties:
+  versioning:
+    type: object
+    description: Configuration for versioning
+    properties:
+      file:
+        type: string
+        description: JSON file where the version is stored
+        default: version.json
+    required:
+      - file
+    default:
+      file: version.json
   commits:
     type: array
     description: |
       The list of commit types and their corresponding release types.
     default:
-    - type: break
-      release: major
-    - type: feat
-      release: minor
-    - type: fix
-      release: patch
-    - type: revert
-      release: patch
-    - type: refactor
-      release: none      
-    - type: chore
-      release: none
-    - type: test
-      release: none
-    - type: docs
-      release: none
-    - type: ci
-      release: none
+      - type: break
+        release: major
+      - type: feat
+        release: minor
+      - type: fix
+        release: patch
+      - type: revert
+        release: patch
+      - type: refactor
+        release: none
+      - type: chore
+        release: none
+      - type: test
+        release: none
+      - type: docs
+        release: none
+      - type: ci
+        release: none
     uniqueItems: true
     items:
       type: object
@@ -45,7 +57,7 @@ properties:
       calculate-next-version: false
       print-summary: false
       list: []
-    description: Scope configuration 
+    description: Scope configuration
     properties:
       calculate-next-version:
         type: boolean
@@ -75,7 +87,7 @@ properties:
               items:
                 type: string
                 description: The file path or glob pattern for files modified for this scope
-                pattern: '^[^/.].*$'  # validate it does not start with "/" nor "."
+                pattern: "^[^/.].*$" # validate it does not start with "/" nor "."
             versioning:
               type: object
               description: The versioning configuration for the scope.

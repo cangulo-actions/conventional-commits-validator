@@ -80,7 +80,7 @@ jobs:
     name: ${{ matrix.scenario }}
     needs: get-changes
     if: needs.get-changes.outputs.action-modified == 'true' || needs.get-changes.outputs.e2e-tests-modified == 'true'
-    concurrency:  # concurrency set to avoid conflicts pushing to each repo
+    concurrency: # concurrency set to avoid conflicts pushing to each repo
       group: e2e-tests-${{ matrix.spec }}
       cancel-in-progress: false
     strategy:
@@ -114,6 +114,10 @@ jobs:
           - scenario: "Feat: conf.scopes"
             spec: cypress/e2e/feat-conf-scopes.feature
             key: feat-conf-scopes
+
+          - scenario: "Feat: conf.versioning.file"
+            spec: cypress/e2e/feat-conf-versioning-file.feature
+            key: feat-conf-versioning-file
 
           - scenario: "Feat: conf.scopes.calculate-next-version"
             spec: cypress/e2e/feat-conf-scopes-calculate-next-release.feature
@@ -169,9 +173,9 @@ jobs:
           CYPRESS_GH_ORG: ${{ env.GH_ORG }}
           CYPRESS_GH_TOKEN: ${{ secrets.CANGULO_BOT_MODIFY_GH_WORKFLOWS }}
           CYPRESS_GH_API_URL: https://api.github.com
-          CYPRESS_WAIT_TIME_CI_WORKFLOW: 25000  # wait 25 seconds before checking the CD workflow
-          CYPRESS_API_RETRY_INTERVAL_MS: 10000  # retry every 10 seconds
-          CYPRESS_API_RETRY_TIMEOUT_MS: 40000   # timeout after 40 seconds of retry
+          CYPRESS_WAIT_TIME_CI_WORKFLOW: 25000 # wait 25 seconds before checking the CD workflow
+          CYPRESS_API_RETRY_INTERVAL_MS: 10000 # retry every 10 seconds
+          CYPRESS_API_RETRY_TIMEOUT_MS: 40000 # timeout after 40 seconds of retry
           CYPRESS_CC_BRANCH: ${{ github.head_ref }}
           CYPRESS_CC_PR_NUMBER: ${{ github.event.number }}
           CYPRESS_GH_USER_NAME: ${{ env.GH_E2E_user }}

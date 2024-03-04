@@ -3,11 +3,8 @@ const { calculateNextVersion, getReleaseType } = require('./calculate-next-versi
 const { groupBy } = require('core-js/actual/array/group-by')
 
 const fs = require('fs')
-const repoChangesConfig = {
-  versionJsonPath: 'version.json'
-}
 
-function buildNextReleases (conf, changes) {
+function buildNextReleases (config, changes) {
   const result = {
     releaseRequired: false,
     version: '',
@@ -15,15 +12,19 @@ function buildNextReleases (conf, changes) {
     scopes: {}
   }
 
-  const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, repoChangesConfig.versionJsonPath)
+  const repoChangesConfig = {
+    versionFile: config.versioning.file
+  }
+
+  const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, repoChangesConfig.versionFile)
   result.releaseRequired = requiresNewRelease
 
   if (requiresNewRelease) {
     result.version = nextVersion
     result.releaseType = nextReleaseType
 
-    if (conf.scopes.list.length > 0) {
-      const scopesSupported = conf.scopes.list
+    if (config.scopes.list.length > 0) {
+      const scopesSupported = config.scopes.list
       const scopesResult = {}
       const changesByScope = changes
         .flatMap(change => change.scopes.map(scope => ({ scope, change })))
@@ -34,10 +35,10 @@ function buildNextReleases (conf, changes) {
 
       for (const [scope, changes] of Object.entries(changesByScope)) {
         const scopeConfig = scopesSupported.find(x => x.key === scope)
-        const calculateVersion = scopeConfig['calculate-next-version'] ?? conf.scopes['calculate-next-version']
+        const calculateVersion = scopeConfig['calculate-next-version'] ?? config.scopes['calculate-next-version']
         if (calculateVersion) {
-          const versionJsonPath = scopeConfig.versioning.file
-          const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, versionJsonPath)
+          const versionFile = scopeConfig.versioning.file
+          const { requiresNewRelease, nextVersion, nextReleaseType } = checkForNextRelease(changes, versionFile)
 
           if (requiresNewRelease) {
             scopesResult[scope] = {
