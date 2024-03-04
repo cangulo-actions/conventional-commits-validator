@@ -1,5 +1,9 @@
 name: "🚔️ Commits Validation"
-description: "Validate the commits in the PR"
+description: >
+  Validate PR commits and calculate the next release version based on the changes.
+  Commits must follow the conventional commit format `type(scope): description`
+  Example: `feat(core): add new feature`
+  Custom configuration is supported through a YML file.
 inputs:
   configuration:
     description: "path to the YML configuration"
@@ -178,11 +182,11 @@ runs:
         script: |
           const { parseChange } = require('${{ github.action_path }}/functions/parse-change')
           const commits         = JSON.parse(process.env.COMMITS)
-          const conf            = JSON.parse(process.env.CONFIG)
+          const config          = JSON.parse(process.env.CONFIG)
 
           const changes = commits
             .map(x => {
-              const parsedChange = parseChange(x.message, conf.commits)
+              const parsedChange = parseChange(x.message, config.commits)
               parsedChange.commitId = x.id
               parsedChange.files = x.files
               return parsedChange
@@ -202,11 +206,11 @@ runs:
       with:
         script: |
           const { validateChanges }   = require('${{ github.action_path }}/functions/validate-changes')
-          const conf                  = JSON.parse(process.env.CONFIG)
+          const config                = JSON.parse(process.env.CONFIG)
           const changes               = JSON.parse(process.env.CHANGES)
 
-          const supportedCommitTypes  = conf.commits.map(x => x.type)
-          const errors                = validateChanges(changes, supportedCommitTypes, conf.scopes.list)
+          const supportedCommitTypes  = config.commits.map(x => x.type)
+          const errors                = validateChanges(changes, supportedCommitTypes, config.scopes.list)
 
           if (errors.length > 0) {
             const errorsJSON = JSON.stringify(errors, null, 2)
@@ -215,7 +219,7 @@ runs:
               .addCodeBlock(errorsJSON, 'json')
               .addSeparator()
               .addHeading('Configuration:')
-              .addCodeBlock(JSON.stringify(conf, null, 2), 'json')
+              .addCodeBlock(JSON.stringify(config, null, 2), 'json')
               .write()
             core.setFailed('Errors found validating the commits. Please Check the summary.')
           }
@@ -231,11 +235,11 @@ runs:
       with:
         script: |
           const { buildNextReleases }   = require('${{ github.action_path }}/functions/build-next-releases')
-          const conf                    = JSON.parse(process.env.CONFIG)
+          const config                  = JSON.parse(process.env.CONFIG)
           const changes                 = JSON.parse(process.env.CHANGES)
           const versionPrefix           = process.env.VERSION_PREFIX
 
-          let result        = buildNextReleases(conf, changes)
+          let result        = buildNextReleases(config, changes)
           result['version'] = `${versionPrefix}${result['version']}`
 
           core.startGroup('Next Release')
@@ -259,7 +263,7 @@ runs:
         SCOPES: ${{ steps.calculate-next-release.outputs.scopes }}
       with:
         script: |
-          const conf                    = JSON.parse(process.env.CONFIG)
+          const config                  = JSON.parse(process.env.CONFIG)
           const nextReleaseRequired     = process.env.NEXT_RELEASE_REQUIRED === 'true'
           const nextVersion             = process.env.NEXT_VERSION
           const nextReleaseType         = process.env.NEXT_RELEASE_TYPE
