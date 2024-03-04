@@ -1,3 +1,8 @@
+# 0.5.0 feat: allow custom file for storing version. Useful for NPM projects. Fixes #106 (#42)
+
+## new features:
+* feat: allow custom file for storing version. Useful for NPM projects. Fixes #106 (#42)
+
 # 0.4.0 feat: support version-prefix when calculating next version. Fixes #39 (#40)
 
 ## new features:
