@@ -1,3 +1,8 @@
+# 0.5.1 fix: Updated npm dependencies (#44)
+
+## patches:
+* fix: Updated npm dependencies (#44)
+
 # 0.5.0 feat: allow custom file for storing version. Useful for NPM projects. Fixes #106 (#42)
 
 ## new features:
