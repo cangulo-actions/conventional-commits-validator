@@ -1,15 +1,14 @@
 name: shared-get-changes
 
 on:
-  workflow_call: 
+  workflow_call:
     outputs:
-      js-modified: 
+      js-modified:
         value: ${{ jobs.get-changes.outputs.js-modified }}
       e2e-tests-modified:
         value: ${{ jobs.get-changes.outputs.e2e-tests-modified }}
-      action-modified: 
+      action-modified:
         value: ${{ jobs.get-changes.outputs.action-modified }}
-
 
 jobs:
   get-changes:
@@ -32,9 +31,11 @@ jobs:
               - functions/**
               - package.json
               - package-lock.json
+              - node_modules/**
             js-tests:
               - tests/index/**
               - tests/functions/**
+              - node_modules/**
             e2e-tests:
               - cypress/**
             action:
@@ -42,3 +43,4 @@ jobs:
               - cypress/**
               - package.json
               - package-lock.json
+              - node_modules/**
