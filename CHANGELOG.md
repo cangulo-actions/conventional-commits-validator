@@ -1,3 +1,8 @@
+# 0.5.2 fix: [npm-packages] include NPM packages in the repository. deleted `npm install` command from action.yml (#45)
+
+## patches:
+* fix: [npm-packages] include NPM packages in the repository. deleted `npm install` command from action.yml (#45)
+
 # 0.5.1 fix: Updated npm dependencies (#44)
 
 ## patches:
